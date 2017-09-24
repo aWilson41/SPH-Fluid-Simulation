@@ -5,6 +5,8 @@
 
 namespace vmath
 {
+const float PI_F = static_cast<float>(M_PI);
+
 template <typename T> 
 inline T radians(T angleInRadians)
 {

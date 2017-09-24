@@ -5,7 +5,7 @@
 int main()
 {
 	SPH* sph = new SPH();
-	sph.start();
+	sph->start(100);
 	delete sph;
 
 	return 0;
