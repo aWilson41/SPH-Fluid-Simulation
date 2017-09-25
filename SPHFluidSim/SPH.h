@@ -10,24 +10,26 @@
 // Holds simulation parameters
 struct Parameters
 {
-	int nFrames = 0;   // Number of frames
-	float h = 0.0f;    // Particle size
-	float rho0 = 0.0f; // Reference density
-	float k = 0.0f;    // Bulk modulus
-	float mu = 0.0f;   // Viscosity
-	float g = 0.0f;    // Gravity strength
+	int nFrames = 400;    // Number of frames
+	int npFrames = 100;   // Number of steps per frame
+	float h = 0.05f;      // Particle size
+	float dt = 0.0001f;   // Time step
+	float rho0 = 1000.0f; // Reference density
+	float k = 1000.0f;    // Bulk modulus
+	float mu = 0.1f;      // Viscosity
+	float g = 9.8f;       // Gravity strength
 };
 
 // Holds information of the current state of the simulation
 struct State
 {
-	int n = 0;				// Number of particles
-	float mass = 0.0f;		// Particle mass
-	float* rho;				// Particle densities
+	int n = 0;              // Number of particles
+	float mass = 0.0f;      // Particle mass
+	float* rho;             // Particle densities
 	vmath::vec3* positions; // Particle positions
-	vmath::vec3* vh;		// Particle half step velocities
-	vmath::vec3* v;			// Particle full step velocities
-	vmath::vec3* a;			// Particle accelerations
+	vmath::vec3* vh;        // Particle half step velocities
+	vmath::vec3* v;         // Particle full step velocities
+	vmath::vec3* a;         // Particle accelerations
 };
 
 class SPH
@@ -57,12 +59,23 @@ public:
 	}
 
 	// Number of frames
-	void start(int nFrames)
+	void start()
 	{
-		for (int i = 0; i < nFrames; i++)
+		float dt = 0.01f;
+		calcForces();
+		leapfrogStart(dt);
+		for (int frame = 0; frame < params.nFrames; frame++)
 		{
+			for (int step = 0; step < params.npFrames; step++)
+			{
+				calcForces();
+				leapfrogStep(dt);
+			}
 
+			// Write frame
 		}
+
+		printf("Complete");
 	}
 
 	// Updates the density
@@ -213,6 +226,79 @@ public:
 		v *= DAMP;
 		vh *= DAMP;
 	}
+
+	static int boxFunc(float x, float y, float z)
+	{
+		return (x < 0.5f) && (y < 0.5f) && (z < 0.5f);
+	}
+
+	typedef int(*domain_fun_t)(float, float, float);
+	void fillRegion(domain_fun_t func)
+	{
+		float h = params.h;
+		float hh = h / 1.3f;
+		// Count mesh points that fall in indicated region.
+		int count = 0;
+		for (float x = 0.0f; x < 1.0f; x += hh)
+		{
+			for (float y = 0.0f; y < 1.0f; y += hh)
+			{
+				for (float z = 0.0f; z < 1.0f; z += hh)
+				{
+					count += func(x, y, z);
+				}
+			}
+		}
+
+		// Populate the particle data structure
+		state.n = count;
+		int p = 0;
+		for (float x = 0.0f; x < 1.0f; x += hh)
+		{
+			for (float y = 0.0f; y < 1.0f; y += hh)
+			{
+				for (float z = 0.0f; z < 1.0f; z += hh)
+				{
+					if (func(x, y, z))
+					{
+						state.positions[p] = vmath::vec3(x, y, z);
+						state.v[p] = vmath::vec3(0.0f, 0.0f, 0.0f);
+						p++;
+					}
+				}
+			}
+		}
+	}
+
+	void normalizeMass()
+	{
+		state.mass = 1.0f;
+		calcDensity();
+		float rho2s = 0.0f;
+		float rhos = 0.0f;
+		for (int i = 0; i < state.n; i++)
+		{
+			rho2s += state.rho[i] * state.rho[i];
+			rhos += state.rho[i];
+		}
+		state.mass *= params.rho0 * rhos / rho2s;
+	}
+
+	void initParticles()
+	{
+		fillRegion(boxFunc);
+		normalizeMass();
+	}
+
+	/*void check_state()
+	{
+		for (int i = 0; i < state.n; i++)
+		{
+			vmath::vec3 pos = state.positions[i];
+			assert(pos[0] >= 0.0f || pos[0] <= 1.0f);
+			assert(pos[1] >= 0.0f || pos[1] <= 1.0f);
+		}
+	}*/
 
 private:
 	Parameters params;
