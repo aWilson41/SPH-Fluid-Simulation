@@ -290,16 +290,6 @@ public:
 		normalizeMass();
 	}
 
-	/*void check_state()
-	{
-		for (int i = 0; i < state.n; i++)
-		{
-			vmath::vec3 pos = state.positions[i];
-			assert(pos[0] >= 0.0f || pos[0] <= 1.0f);
-			assert(pos[1] >= 0.0f || pos[1] <= 1.0f);
-		}
-	}*/
-
 private:
 	Parameters params;
 	State state;
