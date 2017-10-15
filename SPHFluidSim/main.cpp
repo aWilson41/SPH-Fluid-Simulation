@@ -46,7 +46,11 @@ int main()
 	SPH* sph = new SPH();
 	sph->setParameters(params);
 	sph->start();
+	sph->cleanup();
 	delete sph;
+
+	printf("\n");
+	system("pause");
 
 	return 0;
 }

@@ -6,6 +6,8 @@
 #include "vmath.h"
 
 #include <vector>
+#include <iostream>
+#include <fstream>
 
 // Holds simulation parameters
 struct Parameters
@@ -62,8 +64,10 @@ public:
 	void start()
 	{
 		float dt = 0.01f;
+		initParticles();
 		calcForces();
 		leapfrogStart(dt);
+		writeParticles(0);
 		for (int frame = 0; frame < params.nFrames; frame++)
 		{
 			for (int step = 0; step < params.npFrames; step++)
@@ -71,11 +75,11 @@ public:
 				calcForces();
 				leapfrogStep(dt);
 			}
-
-			// Write frame
+			writeParticles(frame + 1);
+			printf("Frame %d Complete\n", frame);
 		}
 
-		printf("Complete");
+		printf("Simulation Complete");
 	}
 
 	// Updates the density
@@ -93,7 +97,7 @@ public:
 			for (int j = i + 1; j < state.n; j++)
 			{
 				vmath::vec3 dPos = state.positions[i] - state.positions[j];
-				float r2 = dPos[0] * dPos[0] + dPos[1] * dPos[1];
+				float r2 = dPos[0] * dPos[0] + dPos[1] * dPos[1] + dPos[2] * dPos[2];
 				float z = h2 - r2;
 				if (z > 0)
 				{
@@ -116,8 +120,7 @@ public:
 		// Start with gravity and surface forces
 		for (int i = 0; i < state.n; i++)
 		{
-			state.a[i][0] = 0.0f;
-			state.a[i][1] = -params.g;
+			state.a[i] = vmath::vec3(0.0f, -params.g, 0.0f);
 		}
 
 		// Constants for interaction term
@@ -132,8 +135,8 @@ public:
 			for (int j = i + 1; j < state.n; j++)
 			{
 				vmath::vec3 dPos = state.positions[i] - state.positions[j];
-				float r2 = dPos[0] * dPos[0] + dPos[1] * dPos[1];
-				if (r2 < h2)
+				float r2 = dPos[0] * dPos[0] + dPos[1] * dPos[1] + dPos[2] * dPos[2];
+				if (r2 > 0 && r2 < h2)
 				{
 					const float rhoj = state.rho[j];
 					float q = sqrt(r2) / h;
@@ -195,6 +198,8 @@ public:
 		const float XMAX = 1.0f;
 		const float YMIN = 0.0f;
 		const float YMAX = 1.0f;
+		const float ZMIN = 0.0f;
+		const float ZMAX = 1.0f;
 
 		for (int i = 0; i < state.n; i++)
 		{
@@ -206,10 +211,14 @@ public:
 				dampReflect(1, YMIN, state.positions[i], state.v[i], state.vh[i]);
 			if (state.positions[i][1] > YMAX) // else if?
 				dampReflect(1, YMAX, state.positions[i], state.v[i], state.vh[i]);
+			if (state.positions[i][2] < ZMIN)
+				dampReflect(2, ZMIN, state.positions[i], state.v[i], state.vh[i]);
+			if (state.positions[i][2] > ZMAX)
+				dampReflect(2, ZMAX, state.positions[i], state.v[i], state.vh[i]);
 		}
 	}
 
-	void dampReflect(int which, float barrier, vmath::vec3 pos, vmath::vec3 v, vmath::vec3 vh)
+	void dampReflect(int which, float barrier, vmath::vec3& pos, vmath::vec3& v, vmath::vec3& vh)
 	{
 		// Coefficient of resitiution
 		const float DAMP = 0.75f;
@@ -252,6 +261,11 @@ public:
 
 		// Populate the particle data structure
 		state.n = count;
+		state.positions = new vmath::vec3[count];
+		state.v = new vmath::vec3[count];
+		state.vh = new vmath::vec3[count];
+		state.a = new vmath::vec3[count];
+		state.rho = new float[count];
 		int p = 0;
 		for (float x = 0.0f; x < 1.0f; x += hh)
 		{
@@ -263,6 +277,9 @@ public:
 					{
 						state.positions[p] = vmath::vec3(x, y, z);
 						state.v[p] = vmath::vec3(0.0f, 0.0f, 0.0f);
+						state.a[p] = vmath::vec3(0.0f, 0.0f, 0.0f);
+						state.vh[p] = vmath::vec3(0.0f, 0.0f, 0.0f);
+						state.rho[p] = 0.0f;
 						p++;
 					}
 				}
@@ -288,6 +305,26 @@ public:
 	{
 		fillRegion(boxFunc);
 		normalizeMass();
+	}
+
+	// Simply writes every particle to a file
+	void writeParticles(int frame)
+	{
+		std::ofstream file;
+		file.open("Test" + std::to_string(frame) +".dat");
+		for (unsigned int i = 0; i < state.n; i++)
+		{
+			file << state.positions[i][0] << " " << state.positions[i][1] << " " << state.positions[i][2] << " ";
+		}
+		file.close();
+	}
+
+	void cleanup()
+	{
+		delete[] state.positions;
+		delete[] state.v;
+		delete[] state.vh;
+		delete[] state.a;
 	}
 
 private:
