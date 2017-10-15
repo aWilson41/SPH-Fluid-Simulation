@@ -289,3 +289,4 @@ __pycache__/
 *.sln
 *.vcxproj
 *.filters
+/SPHFluidSim/output

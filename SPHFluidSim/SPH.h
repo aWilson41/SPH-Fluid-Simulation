@@ -311,7 +311,7 @@ public:
 	void writeParticles(int frame)
 	{
 		std::ofstream file;
-		file.open("Test" + std::to_string(frame) +".dat");
+		file.open("output/Test" + std::to_string(frame) +".dat");
 		for (unsigned int i = 0; i < state.n; i++)
 		{
 			file << state.positions[i][0] << " " << state.positions[i][1] << " " << state.positions[i][2] << " ";
