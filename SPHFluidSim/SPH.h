@@ -12,15 +12,16 @@
 // Holds simulation parameters
 struct Parameters
 {
-	int nFrames = 400;    // Number of frames
-	int npFrames = 100;   // Number of steps per frame
-	float h = 0.05f;      // Particle size
-	float dt = 0.0001f;   // Time step
-	float rho0 = 1000.0f; // Reference density
-	float k = 1000.0f;    // Bulk modulus
-	float mu = 0.1f;      // Viscosity
-	float g = 9.8f;       // Gravity strength
+	int nFrames = 2000;    // Number of frames
+	int npFrames = 4;   // Number of steps per frame
+	float h = 0.03f;      // Particle size
+	float dt = 0.01f;   // Time step
+	float rho0 = 100.0f; // Reference density
+	float k = 100.0f;    // Bulk modulus
+	float mu = 0.2f;      // Viscosity
+	float g = 0.8f;       // Gravity strength
 };
+// We can alter npFrames to speed up simulation without increasing forces
 
 // Holds information of the current state of the simulation
 struct State
@@ -28,6 +29,7 @@ struct State
 	int n = 0;              // Number of particles
 	float mass = 0.0f;      // Particle mass
 	float* rho;             // Particle densities
+	float elapsedTime = 0.0f; // dt cummulation
 	vmath::vec3* positions; // Particle positions
 	vmath::vec3* vh;        // Particle half step velocities
 	vmath::vec3* v;         // Particle full step velocities
@@ -63,7 +65,7 @@ public:
 	// Number of frames
 	void start()
 	{
-		float dt = 0.01f;
+		float dt = params.dt;
 		initParticles();
 		calcForces();
 		leapfrogStart(dt);
@@ -74,9 +76,11 @@ public:
 			{
 				calcForces();
 				leapfrogStep(dt);
+				state.elapsedTime += dt;
 			}
 			writeParticles(frame + 1);
 			printf("Frame %d Complete\n", frame);
+			//printf("Time %f\n", state.elapsedTime);
 		}
 
 		printf("Simulation Complete");
@@ -89,16 +93,17 @@ public:
 		const float h2 = h * h;
 		const float h8 = h2 * h2 * h2 * h2;
 		const float c = 4.0f * state.mass / (vmath::PI_F * h8);
+		const float a = 4.0f * state.mass / (vmath::PI_F * h2);
 
-		// Compute every particle with every other particle
+		// For every particle i
 		for (int i = 0; i < state.n; i++)
 		{
-			state.rho[i] += 4.0f * state.mass / (vmath::PI_F * h2);
+			state.rho[i] += a;
+			// For every particle j in front of i
 			for (int j = i + 1; j < state.n; j++)
 			{
 				vmath::vec3 dPos = state.positions[i] - state.positions[j];
-				float r2 = dPos[0] * dPos[0] + dPos[1] * dPos[1] + dPos[2] * dPos[2];
-				float z = h2 - r2;
+				float z = h2 - vmath::dot(dPos, dPos);
 				if (z > 0)
 				{
 					float rho_ij = c * z * z * z;
@@ -113,33 +118,41 @@ public:
 	void calcForces()
 	{
 		const float h = params.h;
+		float invH = 1 / h;
 		const float h2 = h * h;
 
 		calcDensity();
 
-		// Start with gravity and surface forces
+		// Apply gravity to every particle
 		for (int i = 0; i < state.n; i++)
 		{
 			state.a[i] = vmath::vec3(0.0f, -params.g, 0.0f);
 		}
 
-		// Constants for interaction term
+		// Constants for particle interaction
 		float c0 = state.mass / (vmath::PI_F * h2 * h2);
 		float cp = 15.0f * params.k;
 		float cv = -40.0f * params.mu;
 
-		// Compute the interaction forces
+		// For every particle i
 		for (int i = 0; i < state.n; i++)
 		{
+			// Get the density of particle i
 			const float rhoi = state.rho[i];
+			// For every particle j in front of i
 			for (int j = i + 1; j < state.n; j++)
 			{
+				// Compute the difference in positions
 				vmath::vec3 dPos = state.positions[i] - state.positions[j];
-				float r2 = dPos[0] * dPos[0] + dPos[1] * dPos[1] + dPos[2] * dPos[2];
-				if (r2 > 0 && r2 < h2)
+				// Scalar distance squared
+				float r2 = vmath::dot(dPos, dPos);
+				// If the distance squared is less than the particle size squared
+				if (r2 < h2)
 				{
+					// Get the density of particle j
 					const float rhoj = state.rho[j];
-					float q = sqrt(r2) / h;
+					// Dist between particles / particle size
+					float q = sqrt(r2) * invH;
 					float u = 1.0f - q;
 					float w0 = c0 * u / (rhoi * rhoj);
 					float wp = w0 * cp * (rhoi + rhoj - 2.0f * params.rho0) * u / q;
@@ -195,7 +208,8 @@ public:
 	{
 		// Boundaries
 		const float XMIN = 0.0f;
-		const float XMAX = 1.0f;
+		//float XMIN = sin(state.elapsedTime * 0.5f) * 0.5f;
+		const float XMAX = 3.0f;
 		const float YMIN = 0.0f;
 		const float YMAX = 1.0f;
 		const float ZMIN = 0.0f;
@@ -220,16 +234,23 @@ public:
 
 	void dampReflect(int which, float barrier, vmath::vec3& pos, vmath::vec3& v, vmath::vec3& vh)
 	{
-		// Coefficient of resitiution
-		const float DAMP = 0.75f;
-		// Ignore degenerate cases
-		if (v[which] == 0)
+		// Coefficient of resitiution (elasticity)
+		const float DAMP = 0.8f;
+		const float E = 1.0f - DAMP;
+
+		// If the velocity is 0 do nothing
+		if (v[which] == 0.0f)
 			return;
-		// Scale back the distance traveled based on time from collision
+
+		// Distance from the barrier in the direction(which x, y, z) / velocity in the direction
+		// How many updates of velocity do we need to travel this distance
 		float tbounce = (pos[which] - barrier) / v[which];
-		pos -= v * (1.0f - DAMP) * tbounce;
+
+		// Removing v * tbounce would cancel the v component putting it on the border.
+		// We remove a fraction of that to dampen
+		pos -= v * E * tbounce;
 		// Reflect the position and velocity
-		pos[which] = 2.0f * barrier - pos[which];
+		pos[which] = 2.0f * barrier - pos[which]; // ?
 		v[which] = -v[which];
 		vh[which] = -vh[which];
 		v *= DAMP;
@@ -238,15 +259,23 @@ public:
 
 	static int boxFunc(float x, float y, float z)
 	{
-		return (x < 0.5f) && (y < 0.5f) && (z < 0.5f);
+		const float XMIN = 0.0f;
+		const float XMAX = 1.0f;
+		const float YMIN = 0.0f;
+		const float YMAX = 1.0f;
+		const float ZMIN = 0.0f;
+		const float ZMAX = 1.0f;
+		return x < XMAX && y < YMAX && z < ZMAX && x > XMIN && y > YMIN && z > ZMIN && 1.0f - x > y;
 	}
 
 	typedef int(*domain_fun_t)(float, float, float);
 	void fillRegion(domain_fun_t func)
 	{
 		float h = params.h;
-		float hh = h / 1.3f;
+		// Put the particles closer than their radius so they explode a bit in the beginning
+		float hh = h / 1.1f;
 		// Count mesh points that fall in indicated region.
+		// For the box this is overkill but its fine
 		int count = 0;
 		for (float x = 0.0f; x < 1.0f; x += hh)
 		{
@@ -258,6 +287,8 @@ public:
 				}
 			}
 		}
+
+		printf("Particle count: %d\n", count);
 
 		// Populate the particle data structure
 		state.n = count;
@@ -279,8 +310,7 @@ public:
 						state.v[p] = vmath::vec3(0.0f, 0.0f, 0.0f);
 						state.a[p] = vmath::vec3(0.0f, 0.0f, 0.0f);
 						state.vh[p] = vmath::vec3(0.0f, 0.0f, 0.0f);
-						state.rho[p] = 0.0f;
-						p++;
+						state.rho[p++] = params.rho0;
 					}
 				}
 			}
@@ -312,9 +342,13 @@ public:
 	{
 		std::ofstream file;
 		file.open("output/Test" + std::to_string(frame) +".dat");
+		file << state.n << " "; // Number of particles
 		for (unsigned int i = 0; i < state.n; i++)
 		{
-			file << state.positions[i][0] << " " << state.positions[i][1] << " " << state.positions[i][2] << " ";
+			file << state.positions[i][0] - 0.5f << " " << state.positions[i][1] - 0.5f << " " << state.positions[i][2] - 0.5f << " ";
+			float v = state.v[i][0] * state.v[i][0] + state.v[i][1] * state.v[i][1] + state.v[i][2] * state.v[i][2];
+			v = sqrt(v);
+			file << v << " ";
 		}
 		file.close();
 	}
