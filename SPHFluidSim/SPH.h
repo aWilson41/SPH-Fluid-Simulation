@@ -8,18 +8,20 @@
 #include <vector>
 #include <iostream>
 #include <fstream>
+#include <cstdio>
+#include <ctime>
 
 // Holds simulation parameters
 struct Parameters
 {
-	int nFrames = 2000;    // Number of frames
-	int npFrames = 4;   // Number of steps per frame
+	int nFrames = 800;    // Number of frames
+	int npFrames = 100;   // Number of steps per frame
 	float h = 0.03f;      // Particle size
-	float dt = 0.01f;   // Time step
-	float rho0 = 100.0f; // Reference density
-	float k = 100.0f;    // Bulk modulus
-	float mu = 0.2f;      // Viscosity
-	float g = 0.8f;       // Gravity strength
+	float dt = 0.001f;   // Time step
+	float rho0 = 1000.0f; // Reference density
+	float k = 1000.0f;    // Bulk modulus
+	float mu = 0.8f;      // Viscosity
+	float g = 0.4f;       // Gravity strength
 };
 // We can alter npFrames to speed up simulation without increasing forces
 
@@ -65,6 +67,7 @@ public:
 	// Number of frames
 	void start()
 	{
+		double totalTime = 0.0;
 		float dt = params.dt;
 		initParticles();
 		calcForces();
@@ -72,6 +75,10 @@ public:
 		writeParticles(0);
 		for (int frame = 0; frame < params.nFrames; frame++)
 		{
+			// Start a timer
+			std::clock_t start;
+			double duration = 0.0;
+			start = std::clock();
 			for (int step = 0; step < params.npFrames; step++)
 			{
 				calcForces();
@@ -79,11 +86,14 @@ public:
 				state.elapsedTime += dt;
 			}
 			writeParticles(frame + 1);
-			printf("Frame %d Complete\n", frame);
-			//printf("Time %f\n", state.elapsedTime);
-		}
+			duration = (std::clock() - start) / static_cast<double>(CLOCKS_PER_SEC);
+			totalTime += duration;
+			printf("Frame %d Complete in %f seconds.\n", frame, duration);
+		}	
 
-		printf("Simulation Complete");
+		printf("Simulation Complete in %f secs\n", totalTime);
+		printf("Average frame time %f secs\n", totalTime / params.nFrames);
+		printf("Average step time %f secs\n", totalTime / (params.nFrames * params.npFrames));
 	}
 
 	// Updates the density
@@ -209,7 +219,7 @@ public:
 		// Boundaries
 		const float XMIN = 0.0f;
 		//float XMIN = sin(state.elapsedTime * 0.5f) * 0.5f;
-		const float XMAX = 3.0f;
+		const float XMAX = 1.0f;
 		const float YMIN = 0.0f;
 		const float YMAX = 1.0f;
 		const float ZMIN = 0.0f;
@@ -265,7 +275,7 @@ public:
 		const float YMAX = 1.0f;
 		const float ZMIN = 0.0f;
 		const float ZMAX = 1.0f;
-		return x < XMAX && y < YMAX && z < ZMAX && x > XMIN && y > YMIN && z > ZMIN && 1.0f - x > y;
+		return x < XMAX && y < YMAX && z < ZMAX && x > XMIN && y > YMIN && z > ZMIN/* && 1.0f - x > y*/;
 	}
 
 	typedef int(*domain_fun_t)(float, float, float);
@@ -273,7 +283,7 @@ public:
 	{
 		float h = params.h;
 		// Put the particles closer than their radius so they explode a bit in the beginning
-		float hh = h / 1.1f;
+		float hh = h / 1.05f;
 		// Count mesh points that fall in indicated region.
 		// For the box this is overkill but its fine
 		int count = 0;
@@ -341,7 +351,7 @@ public:
 	void writeParticles(int frame)
 	{
 		std::ofstream file;
-		file.open("output/Test" + std::to_string(frame) +".dat");
+		file.open("C:/Users/Andx_/Documents/Projects/Repos/SPHFluidSim/output/Test" + std::to_string(frame) +".dat");
 		file << state.n << " "; // Number of particles
 		for (unsigned int i = 0; i < state.n; i++)
 		{
