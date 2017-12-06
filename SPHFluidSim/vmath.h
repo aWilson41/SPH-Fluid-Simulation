@@ -149,10 +149,12 @@ public:
         return result;
     }
 
-    inline vecN& operator/(const T& that)
-    {
-        assign(*this / that);
-    }
+  //  inline vecN& operator/(const T& that)
+  //  {
+  //      assign(*this / that);
+
+		//return *this;
+  //  }
 
     inline T& operator[](int n) { return data[n]; }
     inline const T& operator[](int n) const { return data[n]; }
