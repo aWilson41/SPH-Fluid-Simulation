@@ -34,10 +34,10 @@ public:
 		initParticles(boxFunc);
 
 		// Only needed to start leapfrog
-		calcNeighbors();
-		calcDensity();
-		calcForces();
-		leapFrogStart(dt);
+		//calcNeighbors();
+		//calcDensity();
+		//calcForces();
+		//leapFrogStart(dt);
 
 		writeParticles(0);
 		for (int frame = 0; frame < nFrames; frame++)
@@ -51,8 +51,8 @@ public:
 				calcNeighbors();
 				calcDensity();
 				calcForces();
-				//integrate(dt);
-				leapFrogIntegrate(dt);
+				integrate(dt);
+				//leapFrogIntegrate(dt);
 
 				elapsedTime += dt;
 			}
@@ -95,7 +95,7 @@ public:
 			Particle* p1 = particles[i];
 			float densitySum = 0.0f;
 
-			for (int j = 0; j <  neighbors[i].size(); j++)
+			for (int j = 0; j < neighbors[i].size(); j++)
 			{
 				Particle* p2 = neighbors[i][j];
 				vmath::vec3 dist = p1->position - p2->position;
@@ -107,6 +107,7 @@ public:
 			else
 				p1->density = densitySum;
 			p1->pressure = stiffness * (p1->density - restDensity);
+			//p1->pressure = stiffness * p1->density;
 		}
 	}
 	
@@ -159,16 +160,18 @@ public:
 		if (r == 0.0f)
 			return vmath::vec3(0.0f, 0.0f, 0.0f);
 
-		vmath::vec3 t2 = x / r;
+		vmath::vec3 normalizedX = x / r;
 		float l = h - r;
 
-		return c1 * t2 * l * l;
+		return c1 * normalizedX * l * l;
 	}
 
 	// Laplacian of Viscosity Kernel
 	float laplaceKernel(vmath::vec3 x)
 	{
 		float r = vmath::length(x);
+		if (r < 0.0f)
+			return 0.0f;
 		return c2 * (h - r);
 	}
 
@@ -223,7 +226,7 @@ public:
 		//float XMIN = sin(state.elapsedTime * 0.5f) * 0.5f;
 		const float XMAX = 3.0f;
 		const float YMIN = 0.0f;
-		const float YMAX = 1.0f;
+		const float YMAX = 0.8f;
 		const float ZMIN = 0.0f;
 		const float ZMAX = 1.0f;
 
@@ -286,19 +289,19 @@ public:
 	// Functions for fluid initialization (domain is x, y, z grid (0,1), (0,1), (0,1))
 	static bool boxFunc(float x, float y, float z)
 	{
-		/*const float XMIN = 0.0f;
+		const float XMIN = 0.0f;
 		const float XMAX = 1.0f;
 		const float YMIN = 0.0f;
 		const float YMAX = 0.75f;
 		const float ZMIN = 0.0f;
-		const float ZMAX = 1.0f;*/
+		const float ZMAX = 1.0f;
 
-		const float XMIN = 0.0f;
+		/*const float XMIN = 0.0f;
 		const float XMAX = 0.5f;
 		const float YMIN = 0.0f;
 		const float YMAX = 0.8f;
 		const float ZMIN = 0.0f;
-		const float ZMAX = 1.0f;
+		const float ZMAX = 1.0f;*/
 		return x < XMAX && y < YMAX && z < ZMAX && x > XMIN && y > YMIN && z > ZMIN;
 	}
 
@@ -384,7 +387,7 @@ private:
 
 public:
 	int nFrames = 1000;          // Number of frames
-	int npFrames = 2;            // Number of steps per frame
+	int npFrames = 5;            // Number of steps per frame
 	float h = 0.03f;             // Particle size
 	float h2 = h * h;
 	float h4 = h2 * h2;
@@ -394,10 +397,10 @@ public:
 	float c1 = -45.0f / (static_cast<float>(M_PI) * h6);
 	float c2 = -c1;
 
-	float dt = 0.02f;            // Time step
-	float viscosity = 2.8f;      // Viscosity
-	float g = 0.8f;             // Gravity strength
-	float initMass = 0.01f;       // Mass assigned to each particle initially volume * restDensity / numParticles
-	float stiffness = 150.5f;    // Internal pressure
+	float dt = 0.01f;            // Time step
+	float viscosity = 3.8f;      // Viscosity
+	float g = 0.4f;             // Gravity strength
+	float initMass = 0.02f;       // Mass assigned to each particle initially volume * restDensity / numParticles
+	float stiffness = 2.0f;    // Internal pressure
 	float restDensity = 998.29f; // Rest density, reference density, rho0
 };
