@@ -63,6 +63,7 @@ public:
 			printf("Frame %d Complete in %f seconds.\n", frame, duration);
 		}	
 
+		cleanup();
 		printf("Simulation Complete in %f secs\n", totalTime);
 		printf("Average frame time %f secs\n", totalTime / nFrames);
 		printf("Average step time %f secs\n", totalTime / (nFrames * npFrames));
@@ -335,7 +336,7 @@ public:
 					{
 						count++;
 						Particle* particle = new Particle();
-						particle->position = vmath::vec3(x, y, z);
+						particle->position = vmath::vec3(x + 1.0f, y, z);
 						particle->velocity = vmath::vec3(0.0f, 0.0f, 0.0f);
 						particle->velocityHalf = vmath::vec3(0.0f, 0.0f, 0.0f);
 						particle->accel = vmath::vec3(0.0f, 0.0f, 0.0f);
@@ -397,7 +398,7 @@ public:
 	float c1 = -45.0f / (static_cast<float>(M_PI) * h6);
 	float c2 = -c1;
 
-	float dt = 0.01f;            // Time step
+	float dt = 0.02f;            // Time step
 	float viscosity = 3.8f;      // Viscosity
 	float g = 0.4f;             // Gravity strength
 	float initMass = 0.02f;       // Mass assigned to each particle initially volume * restDensity / numParticles
