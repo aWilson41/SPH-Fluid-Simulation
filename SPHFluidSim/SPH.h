@@ -8,16 +8,14 @@
 #include <vector>
 #include <iostream>
 #include <fstream>
-//#include <cstdio>
 #include <ctime>
-//#include <conio.h>
 
 class Particle
 {
 public:
 	vmath::vec3 position; // Particle position
 	vmath::vec3 velocity; // Particle full step velocity
-	vmath::vec3 velocityHalf; // Half step
+	vmath::vec3 velocityHalf; // Half step only used in leapfrog integration
 	vmath::vec3 accel;
 	float pressure;
 	float density;
@@ -55,6 +53,7 @@ public:
 				//leapFrogIntegrate(dt);
 
 				elapsedTime += dt;
+				printf("%f\n", sin(elapsedTime * 5.0f) * 0.5f);
 			}
 			writeParticles(frame + 1);
 			//writeSurface(frame + 1);
@@ -108,7 +107,6 @@ public:
 			else
 				p1->density = densitySum;
 			p1->pressure = stiffness * (p1->density - restDensity);
-			//p1->pressure = stiffness * p1->density;
 		}
 	}
 	
@@ -224,7 +222,7 @@ public:
 	{
 		// Boundaries
 		const float XMIN = 0.0f;
-		//float XMIN = sin(state.elapsedTime * 0.5f) * 0.5f;
+		//float XMIN = sin(elapsedTime) * 0.25f;
 		const float XMAX = 3.0f;
 		const float YMIN = 0.0f;
 		const float YMAX = 0.8f;
