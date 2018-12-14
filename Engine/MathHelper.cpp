@@ -6,6 +6,7 @@
 #endif
 #include <random>
 #include <time.h>
+#include <tuple>
 
 glm::mat4 MathHelp::matrixRotateX(GLfloat radians)
 {
@@ -135,6 +136,31 @@ glm::vec3 MathHelp::baryCentric(glm::vec3 p, glm::vec3 a, glm::vec3 b, glm::vec3
 //}
 
 glm::vec3 MathHelp::lerp(glm::vec3 start, glm::vec3 end, GLfloat t) { return start + t * (end - start); }
+glm::vec3 MathHelp::lerp(std::vector<std::tuple<GLfloat, glm::vec3>> colorFunc, GLfloat val)
+{
+	// Assumes colorFunc ordered by val1 in the tuple
+	// If no colors specified return black
+	if (colorFunc.size() < 0)
+		return glm::vec3(0.0f, 0.0f, 0.0f);
+	// If one color specified return that color
+	if (colorFunc.size() < 1)
+		return std::get<1>(colorFunc[0]);
+
+	// If val is under 
+	if (val <= std::get<0>(colorFunc[0]))
+		return std::get<1>(colorFunc[0]);
+	if (val >= std::get<0>(colorFunc.back()))
+		return std::get<1>(colorFunc.back());
+
+	for (UINT i = 0; i < colorFunc.size() - 1; i++)
+	{
+		GLfloat val1 = std::get<0>(colorFunc[i]);
+		GLfloat val2 = std::get<0>(colorFunc[i + 1]);
+		if (val >= val1 && val < val2)
+			return lerp(std::get<1>(colorFunc[i]), std::get<1>(colorFunc[i + 1]), (val - val1) / (val2 - val1));
+	}
+	return glm::vec3(0.0f, 0.0f, 0.0f);
+}
 
 glm::vec3 MathHelp::catmullRom(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, glm::vec3 p3, GLfloat t)
 {

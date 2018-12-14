@@ -65,6 +65,7 @@ public:
 
 	// Simple lerp between start and end given t [0, 1]
 	static glm::vec3 lerp(glm::vec3 start, glm::vec3 end, GLfloat t);
+	static glm::vec3 lerp(std::vector<std::tuple<GLfloat, glm::vec3>> colorFunc, GLfloat val);
 
 	// Catmull rom interpolation between p1 and p2 given t [0, 1]
 	static glm::vec3 catmullRom(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, glm::vec3 p3, GLfloat t);

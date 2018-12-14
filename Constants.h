@@ -1,18 +1,16 @@
 #pragma once
 #include "Engine/MathHelper.h"
 
-static const GLfloat TIMESTEP = 0.001f;
-
-// When outputting frames it's useful to take many simulation steps per frame (substeps)
-// So we calculate the number of substeps from the desired FPS given the timestep
 static const GLuint FPS = 30;
-// Substeps = Number of simulation steps per frame. Calculated so 1s simulation (1/timestep) is divided up over 30 frames
-static const GLuint SUBSTEPS = static_cast<GLuint>((1.0f / TIMESTEP) / FPS);
+static const GLuint SUBSTEPS = 5;
+static const GLfloat TIMESCALE = 0.5f;
+static const GLfloat TIMESTEP = TIMESCALE / (FPS * SUBSTEPS);
 
-static const GLfloat VISCOSITY = 10.6f; // Scales the viscous force
-static const GLfloat STIFFNESS = 10.8f; // Interal Pressure
-static const GLfloat REST_DENSITY = 998.29f; // Resting density of the fluid kg/m^3
-static const GLfloat FRICTION = 0.0f; // This is just a ratio multiplied with the tangential velocity during colllision
+static const GLfloat VISCOSITY = 5.0f; // Scales the viscous force
+static const GLfloat STIFFNESS = 10.0f; // Scales the interal Pressure
+static const GLfloat REST_DENSITY = 998.29f; // Resting density of the fluid kg/m^3 (998 for water)
+// Frictional value that specifies how much friction to have against the boundaries, keep low for fluid
+static const GLfloat FRICTION = 0.05f;
 
 // Particle diameter in meters
 static const GLfloat h = 0.06f;

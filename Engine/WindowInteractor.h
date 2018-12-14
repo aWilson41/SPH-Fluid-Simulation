@@ -9,22 +9,21 @@ enum Button
 	MIDDLE_BUTTON
 };
 
-// Recieves mouse callback, meant to be overriden to decide what to do with the callback
-class MouseInteractor
+class WindowInteractor
 {
 public:
 	virtual void init(glm::vec2 mousePos, int windowWidth, int windowHeight)
 	{
 		prevMousePos = mousePos;
-		MouseInteractor::mousePos = mousePos;
+		WindowInteractor::mousePos = mousePos;
 	}
 
 	virtual void mouseMove(glm::vec2 mousePos)
 	{
 		// Push back
-		prevMousePos = MouseInteractor::mousePos;
+		prevMousePos = WindowInteractor::mousePos;
 		// Update to new one
-		MouseInteractor::mousePos = mousePos;
+		WindowInteractor::mousePos = mousePos;
 	}
 
 	virtual void mouseDown(int button)
@@ -36,7 +35,6 @@ public:
 		else if (button == MIDDLE_BUTTON)
 			middleButtonDown = true;
 	}
-
 	virtual void mouseUp(int button)
 	{
 		if (button == LEFT_BUTTON)
@@ -49,6 +47,9 @@ public:
 
 	// Gives a delta scroll value
 	virtual void mouseScroll(GLfloat ds) { }
+
+	virtual void keyDown(int key) { }
+	virtual void keyUp(int key) { }
 
 	virtual void windowResize(int width, int height) { }
 

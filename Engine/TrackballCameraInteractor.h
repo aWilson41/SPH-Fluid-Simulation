@@ -1,10 +1,10 @@
 #pragma once
-#include "MouseInteractor.h"
+#include "WindowInteractor.h"
 
 class TrackballCamera;
 
 // Maps mouse values to camera
-class TrackballCameraInteractor : public MouseInteractor
+class TrackballCameraInteractor : public WindowInteractor
 {
 public:
 	void setCamera(TrackballCamera* cam) { TrackballCameraInteractor::cam = cam; }

@@ -2,7 +2,7 @@
 #include <vector>
 #include <string>
 
-class MouseInteractor;
+class WindowInteractor;
 class GLFWwindow;
 class Renderer;
 
@@ -20,8 +20,8 @@ public:
 
 	void setRenderer(Renderer* ren) { RenderWindow::ren = ren; }
 	void setWindowName(std::string name);
-	void setInteractor(MouseInteractor* interactor);
-	MouseInteractor* getInteractor() { return interactor; }
+	void setInteractor(WindowInteractor* interactor);
+	WindowInteractor* getInteractor() { return interactor; }
 
 protected:
 	void createWindow(std::string windowName, int windowWidth, int windowHeight);
@@ -35,10 +35,11 @@ protected:
 	static void glfwMouseMove(GLFWwindow* window, double posX, double posY);
 	static void glfwMouseButton(GLFWwindow* window, int button, int action, int mods);
 	static void glfwScroll(GLFWwindow* window, double xoffset, double yoffset);
+	static void glfwKeyEvent(GLFWwindow* window, int key, int scancode, int action, int mods);
 
 protected:
 	GLFWwindow* window = nullptr;
 	Renderer* ren = nullptr;
-	MouseInteractor* interactor = nullptr;
+	WindowInteractor* interactor = nullptr;
 	std::string windowName = "GLFW Window";
 };

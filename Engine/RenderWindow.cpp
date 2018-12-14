@@ -1,5 +1,5 @@
 #include "RenderWindow.h"
-#include "MouseInteractor.h"
+#include "WindowInteractor.h"
 #include "Renderer.h"
 #include <GLFW/glfw3.h>
 
@@ -37,7 +37,6 @@ void RenderWindow::start()
 		render();
 	}
 }
-
 void RenderWindow::stop() { glfwTerminate(); }
 
 void RenderWindow::render()
@@ -62,7 +61,7 @@ void RenderWindow::setWindowName(std::string name)
 	glfwSetWindowTitle(window, windowName.c_str());
 }
 
-void RenderWindow::setInteractor(MouseInteractor* interactor)
+void RenderWindow::setInteractor(WindowInteractor* interactor)
 {
 	RenderWindow::interactor = interactor;
 	// Initialize interactor with mouse position
@@ -89,6 +88,7 @@ void RenderWindow::createWindow(std::string windowName, int windowWidth, int win
 	glfwSetCursorPosCallback(window, glfwMouseMove);
 	glfwSetMouseButtonCallback(window, glfwMouseButton);
 	glfwSetScrollCallback(window, glfwScroll);
+	glfwSetKeyCallback(window, glfwKeyEvent);
 	glfwSetWindowUserPointer(window, this);
 	glfwSwapInterval(0); // Turn off vsync
 
@@ -125,4 +125,13 @@ void RenderWindow::glfwScroll(GLFWwindow* window, double xoffset, double yoffset
 {
 	RenderWindow* renWin = static_cast<RenderWindow*>(glfwGetWindowUserPointer(window));
 	renWin->getInteractor()->mouseScroll(static_cast<GLfloat>(yoffset));
+}
+
+void RenderWindow::glfwKeyEvent(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+	RenderWindow* renWin = static_cast<RenderWindow*>(glfwGetWindowUserPointer(window));
+	if (action == GLFW_PRESS)
+		renWin->getInteractor()->keyDown(key);
+	else if (action == GLFW_RELEASE)
+		renWin->getInteractor()->keyUp(key);
 }
