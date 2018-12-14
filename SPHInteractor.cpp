@@ -17,19 +17,43 @@ SPHInteractor::SPHInteractor()
 	// Set the particle positions
 	std::vector<glm::vec3> particlePos;
 	GLfloat iterLength = h / 1.1f; // Squish the particles together a bit for initialization
-	for (GLfloat x = -10.0f; x < 10.0f; x += iterLength)
+
+	// Sphere initialization
+	glm::vec3 center = glm::vec3(0.0f, 0.5f, 0.0f);
+	geom3d::Rect bounds = geom3d::Rect(glm::vec3(0.0f, 0.5f, 0.0f), glm::vec3(1.5f, 1.0f, 1.5f));
+	glm::vec3 start = bounds.origin();
+	glm::vec3 end = start + bounds.size();
+	for (GLfloat x = start.x; x < end.x; x += iterLength)
 	{
-		for (GLfloat y = -10.0f; y < 10.0f; y += iterLength)
+		for (GLfloat y = start.y; y < end.y; y += iterLength)
 		{
-			for (GLfloat z = -10.0f; z < 10.0f; z += iterLength)
+			for (GLfloat z = start.z; z < end.z; z += iterLength)
 			{
-				if (x < 0.5f && x > -0.25f && 
-					y < 1.5f && y > 0.0f && 
-					z < 0.25f && z > -0.25f && x < -0.5f * y + 0.5f)
-					particlePos.push_back(glm::vec3(x, y, z));
+				glm::vec3 pos = glm::vec3(x + iterLength * 0.5f, y + iterLength * 0.5f, z + iterLength * 0.5f);
+				glm::vec3 dist = center - pos;
+				if (glm::dot(dist, dist) < 0.5f * 0.5f)
+					particlePos.push_back(pos);
 			}
 		}
 	}
+
+	// Rect
+	/*geom3d::Rect bounds = geom3d::Rect(glm::vec3(0.0f, 0.5f, 0.0f), glm::vec3(1.5f, 1.0f, 0.75f));
+	glm::vec3 start = bounds.origin();
+	glm::vec3 end = start + bounds.size();
+	for (GLfloat x = start.x; x < end.x; x += iterLength)
+	{
+		for (GLfloat y = start.y; y < end.y; y += iterLength)
+		{
+			for (GLfloat z = start.z; z < end.z; z += iterLength)
+			{
+				if (x < 0.0f && x > -0.5f &&
+					y < 1.5f && y > 0.0f &&
+					z < 0.25f && z > -0.25f)
+					particlePos.push_back(glm::vec3(x, y, z));
+			}
+		}
+	}*/
 
 	// Create a uv sphere source for instancing
 	sphereSource = new SphereSource();
@@ -56,10 +80,8 @@ SPHInteractor::SPHInteractor()
 	colorFunc.push_back(std::tuple<GLfloat, glm::vec3>(1.5f, glm::vec3(1.0f, 1.0f, 1.0f)));
 
 	// Setup the SPHDomain for simulation
-	geom3d::Rect bounds = MathHelp::get3dBounds(particlePos.data(), static_cast<UINT>(particlePos.size()));
-	bounds.extent *= glm::vec3(1.0f, 1.0f, 1.2f);
 	sphDomain = new SPHDomain();
-	sphDomain->initParticles(particles, bounds.pos - bounds.size() * 0.5f, bounds.size() * 0.5f + glm::vec3(1.5f, 0.0f, 0.0f));
+	sphDomain->initParticles(particles, bounds.origin(), bounds.size());// +glm::vec3(1.5f, 0.0f, 0.0f));
 	updateParticleMapper();
 }
 SPHInteractor::~SPHInteractor()

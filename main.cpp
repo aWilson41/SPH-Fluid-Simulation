@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
 	PolyDataMapper planeMapper;
 	planeMapper.setInput(planeSource.getOutput());
 	planeMapper.setMaterial(ren.getMaterial(0));
-	planeMapper.setModelMatrix(MathHelp::matrixTranslate(2.0f, 0.0f, 0.0f) * MathHelp::matrixScale(5.0f, 3.0f, 2.0f));
+	planeMapper.setModelMatrix(MathHelp::matrixScale(5.0f, 1.0f, 5.0f));
 	planeMapper.update();
 	ren.addRenderItem(&planeMapper);
 

@@ -49,6 +49,7 @@ namespace geom3d
 	}
 	GLfloat Rect::volume() { return extent.x * extent.y * extent.z * 8.0f; }
 	glm::vec3 Rect::size() { return extent * 2.0f; }
+	glm::vec3 Rect::origin() { return pos - extent; }
 
 	// Polygon
 	Poly::Poly() { type = ShapeType::POLY; }

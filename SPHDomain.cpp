@@ -70,8 +70,6 @@ void SPHDomain::calcDensity()
 		p1.density = densitySum;
 		// Pressure = 0 when density = rest density
 		p1.pressure = STIFFNESS * (p1.density - REST_DENSITY);
-		if (p1.pressure < 0.0f)
-			p1.pressure = 0.0f;
 
 #ifdef STATS
 		if (p1.pressure > maxPressure)
@@ -170,7 +168,7 @@ void SPHDomain::collision(glm::vec3 pos, glm::vec3& v)
 			else if (pos.z >= bounds[5])
 			{
 				collision = true;
-				normal = glm::vec3(0.0f, .0f, -1.0f);
+				normal = glm::vec3(0.0f, 0.0f, -1.0f);
 			}
 		}
 

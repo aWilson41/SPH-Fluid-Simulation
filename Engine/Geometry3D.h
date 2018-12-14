@@ -49,6 +49,7 @@ namespace geom3d
 	public:
 		GLfloat volume() override;
 		glm::vec3 size();
+		glm::vec3 origin();
 
 	public:
 		glm::vec3 extent = glm::vec3(0.0f);
