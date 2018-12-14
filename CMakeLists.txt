@@ -24,12 +24,9 @@ find_path(GLEW
 find_path(GLFW
 	NAMES "/include/GLFW"
 	PATHS ENV PATH)
-find_path(EIGEN
-	NAMES "/signature_of_eigen3_matrix_library"
-	PATHS ENV PATH)
 
 #include the directories
-include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} ${GLM}/glm ${GLEW}/include ${GLFW}/include ${EIGEN} ${OPENGL_INCLUDE_DIRS})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} ${GLM}/glm ${GLEW}/include ${GLFW}/include ${OPENGL_INCLUDE_DIRS})
 
 add_executable(SPHFluidSim WIN32 ${CPP_FILES} ${H_FILES} ${RESSrcs} ${IMAGERSC} ${SHADER_FILES} ${ENGINE_FILES} ${LODEPNG_FILES})
 

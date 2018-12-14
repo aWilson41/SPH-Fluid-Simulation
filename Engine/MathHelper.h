@@ -140,11 +140,12 @@ public:
 
 	static void setData(glm::mat2x2& m, GLfloat m00, GLfloat m01, GLfloat m10, GLfloat m11);
 
+#ifdef EIGEN
 	// Singular value decomp source = u * (s * Identity) * v^T
 	static void svd(glm::mat2x2 source, glm::mat2x2* u, glm::vec2* s, glm::mat2x2* v);
-
 	// Polar decomp but only returns the rotational
 	static void pd(glm::mat2x2 source, glm::mat2x2* r);
+#endif
 
 	// Only for square matrices
 	template<glm::length_t C, glm::length_t R, typename T, glm::qualifier Q>

@@ -7,6 +7,6 @@ Requires: GLM, GLFW, GLEW
 
 Build with CMake using the provided CMakeLists.txt.
 
-This includes my own graphics abstraction in the "Engine" folder (I might give it it's own repo soon) includes LodePNG for reading/writing png images.
+This includes my own graphics abstraction in the "Engine" folder (I might give it it's own repo soon) includes LodePNG for reading/writing png images. See Constants.h for parameters.
 
 ![Alt text](https://andaharoo.files.wordpress.com/2017/12/2017-12-07-17_56_44-animate.png?w=2000&h=)

@@ -1,7 +1,9 @@
 #include "MathHelper.h"
 #include "Geometry2D.h"
 #include "Geometry3D.h"
+#ifdef EIGEN
 #include <Eigen/SVD>
+#endif
 #include <random>
 #include <time.h>
 
@@ -349,6 +351,7 @@ void MathHelp::setData(glm::mat2x2& m, GLfloat m00, GLfloat m01, GLfloat m10, GL
 	m[1][1] = m11;
 }
 
+#ifdef EIGEN
 void MathHelp::svd(glm::mat2x2 source, glm::mat2x2* u, glm::vec2* s, glm::mat2x2* v)
 {
 	Eigen::Matrix2f m;
@@ -386,3 +389,4 @@ void MathHelp::pd(glm::mat2x2 source, glm::mat2* r)
 	(*r)[0][1] = tmp[0][1];
 	(*r)[1][1] = tmp[1][1];
 }
+#endif
