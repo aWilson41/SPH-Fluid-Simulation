@@ -6,8 +6,9 @@ static const GLuint SUBSTEPS = 5;
 static const GLfloat TIMESCALE = 0.5f;
 static const GLfloat TIMESTEP = TIMESCALE / (FPS * SUBSTEPS);
 
+// Note: Simulation will remain "bouncey" under high compression unless we use a super small timestep or implicitly solve
 static const GLfloat VISCOSITY = 5.0f; // Scales the viscous force
-static const GLfloat STIFFNESS = 10.0f; // Scales the interal Pressure
+static const GLfloat STIFFNESS = 15.0f; // Scales the interal Pressure
 static const GLfloat REST_DENSITY = 998.29f; // Resting density of the fluid kg/m^3 (998 for water)
 // Frictional value that specifies how much friction to have against the boundaries, keep low for fluid
 static const GLfloat FRICTION = 0.05f;
@@ -28,9 +29,9 @@ static const GLfloat spikyGradCoe = -45.0f / (PI * h6);
 static const GLfloat polyLapCoe = -spikyGradCoe;
 
 // When this is defined the program will compile to write frames
-//#define OUTPUTFRAMES
+#define OUTPUTFRAMES
 // Maximum amount of frames allowed to output
-//static const GLuint MAXOUTPUTFRAMES = 1000;
+static const GLuint MAXOUTPUTFRAMES = 1000;
 
 // When this is defined the program will compile to write stats to the console every frame
 //#define STATS

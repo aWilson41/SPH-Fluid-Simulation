@@ -70,6 +70,8 @@ void SPHDomain::calcDensity()
 		p1.density = densitySum;
 		// Pressure = 0 when density = rest density
 		p1.pressure = STIFFNESS * (p1.density - REST_DENSITY);
+		if (p1.pressure < 0.0f)
+			p1.pressure = 0.0f;
 
 #ifdef STATS
 		if (p1.pressure > maxPressure)

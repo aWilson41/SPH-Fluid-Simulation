@@ -27,4 +27,5 @@ protected:
 	std::vector<std::tuple<GLfloat, glm::vec3>> colorFunc;
 	UINT iter = 0;
 	bool running = false;
+	bool writingFrames = true;
 };
