@@ -6,7 +6,7 @@
 #include "Engine/PNGWriter.h"
 #include "Engine/SphereSource.h"
 #include "SPHDomain.h"
-#ifdef STATS
+#ifdef TIMER
 #include <chrono>
 #endif
 #include <GLFW/glfw3.h>
@@ -105,22 +105,21 @@ void SPHInteractor::update()
 	if (!running)
 		return;
 
-#ifdef STATS
+#ifdef TIMER
 	auto start = std::chrono::steady_clock::now();
 	printf("Frame: %d\n", iter);
 	printf("Total Time: %f\n", iter * SUBSTEPS * TIMESTEP);
 #endif
+
 	// Do the actual simulation
 	for (UINT i = 0; i < SUBSTEPS; i++)
 	{
 		sphDomain->update(TIMESTEP);
 	}
-#ifdef STATS
+
+#ifdef TIMER
 	auto end = std::chrono::steady_clock::now();
 	printf("Sim Time: %fs\n", std::chrono::duration<double, std::milli>(end - start).count() / 1000.0);
-	printf("Min,Max Pressure: %f, %f\n", sphDomain.minPressure, sphDomain.maxPressure);
-	printf("Max Pressure Force Mag: %f\n", sphDomain.maxPressureForce);
-	printf("Max Viscous Force Mag: %f\n\n", sphDomain.maxViscousForce);
 #endif
 
 	updateParticleMapper();

@@ -25,4 +25,7 @@ public:
 	glm::vec3 accel = glm::vec3(0.0f);
 
 	std::vector<Particle*> neighbors;
+	int gridX = -1;
+	int gridY = -1;
+	int gridZ = -1;
 };
