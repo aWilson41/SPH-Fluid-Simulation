@@ -2,15 +2,15 @@
 #include "Engine/MathHelper.h"
 
 // Maximum amount of frames allowed to output, only used if output frames is on
-static const GLuint MAXOUTPUTFRAMES = 1000;
+static const GLuint NUMFRAMES = 1000;
 //#define OUTPUTFRAMES
+//#define TIMER
+// Note: Multithreading only takes affect (becomes faster) at higher particle counts 
+// (differs for everyone. For me it doesn't start doing better till like count>~60k)
+#define MULTITHREAD
 
-// When this is defined the program will compile to write stats to the console every frame
-//#define STATS
-#define TIMER
-
-static const GLuint FPS = 30;
-static const GLuint SUBSTEPS = 5;
+static const GLuint FPS = 60;
+static const GLuint SUBSTEPS = 7;
 static const GLfloat TIMESCALE = 0.5f;
 static const GLfloat TIMESTEP = TIMESCALE / (FPS * SUBSTEPS);
 
@@ -28,7 +28,7 @@ static const GLfloat REST_DENSITY = 998.29f; // Resting density of the fluid kg/
 static const GLfloat FRICTION = 0.05f;
 
 // Particle diameter in meters
-static const GLfloat h = 0.05f;
+static const GLfloat h = 0.025f;
 static const GLfloat r = h * 0.5f;
 static const GLfloat PARTICLE_VOLUME = (4.0f / 3.0f) * PI * r * r * r;
 static const GLfloat PARTICLE_MASS = PARTICLE_VOLUME * REST_DENSITY;

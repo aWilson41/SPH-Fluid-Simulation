@@ -2,19 +2,22 @@
 #include "Engine/MathHelper.h"
 #include "Particle.h"
 
-class SPHDomain
+class ThreadedSPHDomain
 {
 public:
 	// Sets the particles and initializes the bounds
 	void initParticles(std::vector<Particle> particles, glm::vec3 origin, glm::vec3 size, GLfloat bufferRatio = 0.1f);
 
-	void calcDensity();
-	void calcForces();
+	void calcDensity(int threadID, int numThreads);
+	void calcForces(int threadID, int numThreads);
+	void integrate(int threadID, int numThreads);
 	void update(GLfloat dt);
 	void collision(glm::vec3 pos, glm::vec3& v);
 
 public:
 	std::vector<Particle> particles;
+	std::vector<std::vector<Particle*>> bins;
+	GLfloat dt = -1.0f;
 
 	glm::vec3 origin;
 	glm::vec3 size;

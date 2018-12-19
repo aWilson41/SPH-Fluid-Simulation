@@ -1,14 +1,20 @@
 #include "SPHInteractor.h"
-#include "Constants.h"
 #include "Engine/Geometry3D.h"
 #include "Engine/GlyphPolyDataMapper.h"
 #include "Engine/ImageData.h"
 #include "Engine/PNGWriter.h"
 #include "Engine/SphereSource.h"
+
+#ifdef MULTITHREAD
+#include "ThreadedSPHDomain.h"
+#else
 #include "SPHDomain.h"
+#endif
+
 #ifdef TIMER
 #include <chrono>
 #endif
+
 #include <GLFW/glfw3.h>
 #include <tuple>
 
@@ -16,7 +22,7 @@ SPHInteractor::SPHInteractor()
 {
 	// Set the particle positions
 	std::vector<glm::vec3> particlePos;
-	GLfloat iterLength = h / 1.1f; // Squish the particles together a bit for initialization
+	GLfloat iterLength = h / 1.8f; // Squish the particles together a bit for initialization
 
 	// Sphere initialization
 	glm::vec3 center = glm::vec3(0.0f, 0.5f, 0.0f);
@@ -48,13 +54,14 @@ SPHInteractor::SPHInteractor()
 			for (GLfloat z = start.z; z < end.z; z += iterLength)
 			{
 				if (x < 0.0f && x > -0.5f &&
-					y < 1.5f && y > 0.0f &&
+					y < 1.0f && y > 0.0f &&
 					z < 0.25f && z > -0.25f)
 					particlePos.push_back(glm::vec3(x, y, z));
 			}
 		}
 	}*/
 
+	printf("Num Particles: %d\n", static_cast<UINT>(particlePos.size()));
 	// Create a uv sphere source for instancing
 	sphereSource = new SphereSource();
 	sphereSource->setRadius(h * 0.5f);
@@ -80,7 +87,11 @@ SPHInteractor::SPHInteractor()
 	colorFunc.push_back(std::tuple<GLfloat, glm::vec3>(1.5f, glm::vec3(1.0f, 1.0f, 1.0f)));
 
 	// Setup the SPHDomain for simulation
+#ifdef MULTITHREAD
+	sphDomain = new ThreadedSPHDomain();
+#else
 	sphDomain = new SPHDomain();
+#endif
 	sphDomain->initParticles(particles, bounds.origin(), bounds.size());// +glm::vec3(1.5f, 0.0f, 0.0f));
 	updateParticleMapper();
 }
@@ -105,10 +116,13 @@ void SPHInteractor::update()
 	if (!running)
 		return;
 
+	/*if (iter > 300)
+		return;*/
+
 #ifdef TIMER
 	auto start = std::chrono::steady_clock::now();
-	printf("Frame: %d\n", iter);
-	printf("Total Time: %f\n", iter * SUBSTEPS * TIMESTEP);
+	//printf("Frame: %d\n", iter);
+	//printf("Total Sim Time: %f\n", iter * SUBSTEPS * TIMESTEP);
 #endif
 
 	// Do the actual simulation
@@ -119,13 +133,16 @@ void SPHInteractor::update()
 
 #ifdef TIMER
 	auto end = std::chrono::steady_clock::now();
-	printf("Sim Time: %fs\n", std::chrono::duration<double, std::milli>(end - start).count() / 1000.0);
+	GLfloat time = std::chrono::duration<double, std::milli>(end - start).count() / 1000.0;
+	//printf("Real Sim Time: %fs\n", time);
+	totalSimTime += time;
+	printf("Time: %fs\n", totalSimTime);
 #endif
 
 	updateParticleMapper();
 
 #ifdef OUTPUTFRAMES
-	if (writingFrames && iter < MAXOUTPUTFRAMES)
+	if (writingFrames && iter < NUMFRAMES)
 	{
 		// Get the frame
 		GLint vp[4];

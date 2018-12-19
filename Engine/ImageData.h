@@ -13,6 +13,8 @@ public:
 
 	UINT* getDimensions() { return dim; }
 	double* getBounds() { return bounds; }
+	double* getSpacing() { return spacing; }
+	double* getOrigin() { return origin; }
 	void* getData() { return data; }
 	UINT getNumComps() { return numComps; }
 	ScalarType getScalarType() { return type; }

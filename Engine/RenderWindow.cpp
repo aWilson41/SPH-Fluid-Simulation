@@ -3,6 +3,9 @@
 #include "Renderer.h"
 #include <GLFW/glfw3.h>
 
+//#define FULLSCREEN
+static const GLfloat screenRatio = 1.0f;
+
 RenderWindow::RenderWindow()
 {
 	glfwSetErrorCallback(glfwErrorCallback);
@@ -19,7 +22,11 @@ RenderWindow::RenderWindow()
 	//glfwWindowHint(GLFW_VISIBLE, GL_FALSE);
 
 	const GLFWvidmode* vidMode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-	createWindow(windowName, static_cast<int>(vidMode->width * 0.85), static_cast<int>(vidMode->height * 0.85));
+#ifdef FULLSCREEN
+	createWindow(windowName, static_cast<int>(vidMode->width), static_cast<int>(vidMode->height));
+#else
+	createWindow(windowName, static_cast<int>(vidMode->width * screenRatio), static_cast<int>(vidMode->height * screenRatio));
+#endif
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_DEPTH_CLAMP);
@@ -74,7 +81,11 @@ void RenderWindow::setInteractor(WindowInteractor* interactor)
 
 void RenderWindow::createWindow(std::string windowName, int windowWidth, int windowHeight)
 {
+#ifdef FULLSCREEN
+	window = glfwCreateWindow(windowWidth, windowHeight, windowName.c_str(), glfwGetPrimaryMonitor(), nullptr);
+#else
 	window = glfwCreateWindow(windowWidth, windowHeight, windowName.c_str(), nullptr, nullptr);
+#endif
 
 	if (!window)
 	{

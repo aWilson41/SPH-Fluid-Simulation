@@ -1,5 +1,6 @@
-#include "SPHDomain.h"
+#include "ThreadedSPHDomain.h"
 #include "Constants.h"
+#include "Engine/StdMultiThreader.h"
 
 // Poly6 Kernel
 static GLfloat kernel(glm::vec3 x)
@@ -32,11 +33,30 @@ static GLfloat laplaceKernel(glm::vec3 x)
 
 static int calcIndex(int x, int y, int z, int width, int height) { return x + width * (y + height * z); }
 
-void SPHDomain::initParticles(std::vector<Particle> particles, glm::vec3 origin, glm::vec3 size, GLfloat bufferRatio)
+static void threadedCalcDensity(void* data)
 {
-	SPHDomain::particles = particles;
-	SPHDomain::origin = origin;
-	SPHDomain::size = size;
+	ThreadInfo* threadInfo = static_cast<ThreadInfo*>(data);
+	ThreadedSPHDomain* sphDomain = static_cast<ThreadedSPHDomain*>(threadInfo->UserData);
+	sphDomain->calcDensity(threadInfo->ThreadID, threadInfo->NumberOfThreads);
+}
+static void threadedCalcForces(void* data)
+{
+	ThreadInfo* threadInfo = static_cast<ThreadInfo*>(data);
+	ThreadedSPHDomain* sphDomain = static_cast<ThreadedSPHDomain*>(threadInfo->UserData);
+	sphDomain->calcForces(threadInfo->ThreadID, threadInfo->NumberOfThreads);
+}
+static void threadedIntegrate(void* data)
+{
+	ThreadInfo* threadInfo = static_cast<ThreadInfo*>(data);
+	ThreadedSPHDomain* sphDomain = static_cast<ThreadedSPHDomain*>(threadInfo->UserData);
+	sphDomain->integrate(threadInfo->ThreadID, threadInfo->NumberOfThreads);
+}
+
+void ThreadedSPHDomain::initParticles(std::vector<Particle> particles, glm::vec3 origin, glm::vec3 size, GLfloat bufferRatio)
+{
+	ThreadedSPHDomain::particles = particles;
+	ThreadedSPHDomain::origin = origin;
+	ThreadedSPHDomain::size = size;
 	bounds[0] = origin.x;
 	bounds[1] = origin.x + size.x;
 	bounds[2] = origin.y;
@@ -60,22 +80,10 @@ void SPHDomain::initParticles(std::vector<Particle> particles, glm::vec3 origin,
 }
 
 // Calculate, density, pressures, and save the neighbors
-void SPHDomain::calcDensity()
+void ThreadedSPHDomain::calcDensity(int threadID, int numThreads)
 {
-	// Bin the particles into local areas
-	std::vector<std::vector<Particle*>> bins(gridWidth * gridHeight * gridDepth);
-	for (UINT i = 0; i < particles.size(); i++)
-	{
-		Particle* p = &particles[i];
-		p->gridX = MathHelp::clamp(static_cast<int>(gridWidth * (p->pos->x - bufferBounds[0]) / bufferSize.x), 0, gridWidth - 1);
-		p->gridY = MathHelp::clamp(static_cast<int>(gridHeight * (p->pos->y - bufferBounds[2]) / bufferSize.y), 0, gridHeight - 1);
-		p->gridZ = MathHelp::clamp(static_cast<int>(gridDepth * (p->pos->z - bufferBounds[4]) / bufferSize.z), 0, gridDepth - 1);
-		int binIndex = calcIndex(p->gridX, p->gridY, p->gridZ, gridWidth, gridHeight);
-		bins[binIndex].push_back(p);
-	}
-
 	// Calculate the density and pressure between particles using the local areas
-	for (UINT i = 0; i < particles.size(); i++)
+	for (UINT i = threadID; i < particles.size(); i += numThreads)
 	{
 		Particle* p1 = &particles[i];
 		GLfloat densitySum = 0.0f;
@@ -110,38 +118,14 @@ void SPHDomain::calcDensity()
 
 		p1->density = densitySum;
 		// Pressure = 0 when density = rest density
-		//p1.pressure = STIFFNESS * (p1.density - REST_DENSITY);
 		p1->pressure = KAPPA * REST_DENSITY / GAMMA * (std::pow(p1->density / REST_DENSITY, GAMMA) - 1.0f); // Taits formulation
 	}
-
-	//for (UINT i = 0; i < particles.size(); i++)
-	//{
-	//	Particle& p1 = particles[i];
-	//	GLfloat densitySum = 0.0f;
-	//	p1.neighbors.clear();
-	//	for (UINT j = 0; j < particles.size(); j++)
-	//	{
-	//		Particle* p2 = &particles[j];
-	//		glm::vec3 dist = p1.getPos() - p2->getPos();
-	//		// IE: If (dist between centers of spheres < r1 + r2). But for our spheres r1=r2 so just use diameter
-	//		if (glm::dot(dist, dist) <= h2)
-	//		{
-	//			if (i != j)
-	//				p1.neighbors.push_back(p2);
-	//			densitySum += p2->mass * kernel(dist);
-	//		}
-	//	}
-	//	p1.density = densitySum;
-	//	// Pressure = 0 when density = rest density
-	//	//p1.pressure = STIFFNESS * (p1.density - REST_DENSITY);
-	//	p1.pressure = KAPPA * REST_DENSITY / GAMMA * (std::pow(p1.density / REST_DENSITY, GAMMA) - 1.0f); // Taits formulation
-	//}
 }
 
-void SPHDomain::calcForces()
-{ 
+void ThreadedSPHDomain::calcForces(int threadID, int numThreads)
+{
 	glm::vec3 g = glm::vec3(0.0f, -9.8f, 0.0f);
-	for (UINT i = 0; i < particles.size(); i++)
+	for (UINT i = threadID; i < particles.size(); i += numThreads)
 	{
 		Particle& p1 = particles[i];
 		glm::vec3 fPressure = glm::vec3(0.0f);
@@ -164,7 +148,19 @@ void SPHDomain::calcForces()
 	}
 }
 
-void SPHDomain::collision(glm::vec3 pos, glm::vec3& v)
+void ThreadedSPHDomain::integrate(int threadID, int numThreads)
+{
+	// Integrate the velocity and position and do collision
+	for (UINT i = threadID; i < particles.size(); i += numThreads)
+	{
+		Particle& p = particles[i];
+		p.updateVelocity(dt);
+		collision(p.getPos(), p.velocity);
+		p.updatePos(dt);
+	}
+}
+
+void ThreadedSPHDomain::collision(glm::vec3 pos, glm::vec3& v)
 {
 	// Collision
 	glm::vec3 normal = glm::vec3(0.0f);
@@ -239,17 +235,27 @@ void SPHDomain::collision(glm::vec3 pos, glm::vec3& v)
 	}
 }
 
-void SPHDomain::update(GLfloat dt)
+void ThreadedSPHDomain::update(GLfloat dt)
 {
-	calcDensity();
-	calcForces();
+	ThreadedSPHDomain::dt = dt;
 
-	// Integrate the velocity and position and do collision
+	// Bin the particles into local areas
+	bins = std::vector<std::vector<Particle*>>(gridWidth * gridHeight * gridDepth);
 	for (UINT i = 0; i < particles.size(); i++)
 	{
-		Particle& p = particles[i];
-		p.updateVelocity(dt);
-		collision(p.getPos(), p.velocity);
-		p.updatePos(dt);
+		Particle* p = &particles[i];
+		p->gridX = MathHelp::clamp(static_cast<int>(gridWidth * (p->pos->x - bufferBounds[0]) / bufferSize.x), 0, gridWidth - 1);
+		p->gridY = MathHelp::clamp(static_cast<int>(gridHeight * (p->pos->y - bufferBounds[2]) / bufferSize.y), 0, gridHeight - 1);
+		p->gridZ = MathHelp::clamp(static_cast<int>(gridDepth * (p->pos->z - bufferBounds[4]) / bufferSize.z), 0, gridDepth - 1);
+		int binIndex = calcIndex(p->gridX, p->gridY, p->gridZ, gridWidth, gridHeight);
+		bins[binIndex].push_back(p);
 	}
+
+	StdMultiThreader threader;
+	threader.SetSingleMethod(threadedCalcDensity, this);
+	threader.SingleMethodExecute();
+	threader.SetSingleMethod(threadedCalcForces, this);
+	threader.SingleMethodExecute();
+	threader.SetSingleMethod(threadedIntegrate, this);
+	threader.SingleMethodExecute();
 }
