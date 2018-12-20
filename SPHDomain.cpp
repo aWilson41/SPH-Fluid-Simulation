@@ -54,9 +54,9 @@ void SPHDomain::initParticles(std::vector<Particle> particles, glm::vec3 origin,
 	bufferSize = size + buffer;
 
 	glm::vec3 spacing = bufferSize / h;
-	gridWidth = spacing.x;
-	gridHeight = spacing.y;
-	gridDepth = spacing.z;
+	gridWidth = static_cast<int>(spacing.x);
+	gridHeight = static_cast<int>(spacing.y);
+	gridDepth = static_cast<int>(spacing.z);
 }
 
 // Calculate, density, pressures, and save the neighbors

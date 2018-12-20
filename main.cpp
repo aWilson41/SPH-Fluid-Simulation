@@ -12,11 +12,12 @@ int main(int argc, char *argv[])
 	// This has to happen before any gl calls in other objects because 
 	// glfw can only make the opengl context when creating the window.
 	RenderWindow renWindow;
-	renWindow.setWindowName("MPM Simulation");
+	renWindow.setWindowName("SPH Simulation");
 
 	// Create the camera for the renderer to use
 	TrackballCamera cam;
-	cam.initTrackballCamera(1.4f, 1.57f, 30.0f);
+	cam.initTrackballCamera(0.7f, 1.57f, 30.5f);
+	cam.setFocalPt(0.001505f, -0.000141f, 0.014044f);
 
 	// Create the renderer
 	Renderer ren;

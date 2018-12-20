@@ -41,6 +41,10 @@ public:
 	void setFocalPt(GLfloat x, GLfloat y, GLfloat z) { setFocalPt(glm::vec3(x, y, z)); }
 	void updateLookAt() { view = glm::lookAt(eyePos, focalPt, up); }
 
+	glm::vec3 getEyePos() { return eyePos; }
+	glm::vec3 getFocalPt() { return focalPt; }
+	glm::vec3 getUp() { return up; }
+
 public:
 	// Camera view matrix
 	glm::mat4 view = glm::mat4(1.0f);

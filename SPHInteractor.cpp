@@ -72,6 +72,7 @@ SPHInteractor::SPHInteractor()
 	particleMapper->allocateOffsets(static_cast<UINT>(particlePos.size()));
 	particleMapper->allocateColorData(static_cast<UINT>(particlePos.size()));
 	glm::vec3* offsetData = reinterpret_cast<glm::vec3*>(particleMapper->getOffsetData());
+	glm::vec3* colorData = reinterpret_cast<glm::vec3*>(particleMapper->getColorData());
 	// Set the offset data of particle mapper with the generate positions and create the particles
 	std::vector<Particle> particles(particlePos.size());
 	for (UINT i = 0; i < particlePos.size(); i++)
@@ -113,36 +114,30 @@ void SPHInteractor::keyUp(int key) { }
 
 void SPHInteractor::update()
 {
-	if (!running)
-		return;
-
-	/*if (iter > 300)
+	/*if (!running)
 		return;*/
 
 #ifdef TIMER
 	auto start = std::chrono::steady_clock::now();
-	//printf("Frame: %d\n", iter);
-	//printf("Total Sim Time: %f\n", iter * SUBSTEPS * TIMESTEP);
 #endif
-
-	// Do the actual simulation
-	for (UINT i = 0; i < SUBSTEPS; i++)
+	if (running)
 	{
-		sphDomain->update(TIMESTEP);
+		// Do the actual simulation
+		for (UINT i = 0; i < SUBSTEPS; i++)
+		{
+			sphDomain->update(TIMESTEP);
+		}
 	}
 
 #ifdef TIMER
 	auto end = std::chrono::steady_clock::now();
-	GLfloat time = std::chrono::duration<double, std::milli>(end - start).count() / 1000.0;
-	//printf("Real Sim Time: %fs\n", time);
-	totalSimTime += time;
-	printf("Time: %fs\n", totalSimTime);
+	printf("Time Frame Took: %fs\n", std::chrono::duration<double, std::milli>(end - start).count() / 1000.0);
 #endif
 
 	updateParticleMapper();
 
 #ifdef OUTPUTFRAMES
-	if (writingFrames && iter < NUMFRAMES)
+	if (running && writingFrames && iter < NUMFRAMES)
 	{
 		// Get the frame
 		GLint vp[4];
@@ -165,9 +160,9 @@ void SPHInteractor::update()
 			writer.setFileName("output/frame_" + std::to_string(iter) + ".png");
 		writer.setInput(&image);
 		writer.update();
+		iter++;
 	}
 #endif
-	iter++;
 }
 
 void SPHInteractor::updateParticleMapper()

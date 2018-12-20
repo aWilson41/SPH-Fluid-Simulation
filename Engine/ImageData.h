@@ -11,6 +11,19 @@ public:
 
 	void allocate2DImage(UINT* dim, double* spacing, double* origin, UINT numComps, ScalarType type);
 
+	void setSpacing(double x, double y, double z)
+	{ 
+		spacing[0] = x;
+		spacing[1] = y;
+		spacing[2] = z;
+	}
+	void setOrigin(double x, double y, double z)
+	{
+		origin[0] = x;
+		origin[1] = y;
+		origin[2] = z;
+	}
+
 	UINT* getDimensions() { return dim; }
 	double* getBounds() { return bounds; }
 	double* getSpacing() { return spacing; }

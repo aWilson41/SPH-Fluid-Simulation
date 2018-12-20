@@ -26,6 +26,7 @@ public:
 
 	GlyphPolyDataMapper* getParticleMapper() { return particleMapper; }
 
+public:
 protected:
 #ifdef MULTITHREAD
 	ThreadedSPHDomain* sphDomain = nullptr;
@@ -38,8 +39,4 @@ protected:
 	UINT iter = 0;
 	bool running = false;
 	bool writingFrames = true;
-
-#ifdef TIMER
-	GLfloat totalSimTime = 0.0f;
-#endif
 };
