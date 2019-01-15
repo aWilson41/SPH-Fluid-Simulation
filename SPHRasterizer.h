@@ -17,15 +17,29 @@ public:
 	};
 
 public:
-	void setSPHDomain(SPHDomain* domain) { sphDomain = domain; }
+	~SPHRasterizer();
 
-	// Returns the domain rasterized onto an image contained within the bounds
-	ImageData rasterize(UINT* dim, double* spacing);
+public:
+	void setSPHDomain(SPHDomain* domain) { sphDomain = domain; }
+	void setDim(UINT dimX, UINT dimY, UINT dimZ)
+	{
+		dim[0] = dimX;
+		dim[1] = dimY;
+		dim[2] = dimZ;
+	}
+	void setSize(glm::vec3 size) { SPHRasterizer::size = size; }
+
+	ImageData* getOutput() { return imageData; }
+
+	void update();
 
 protected:
 	void raster(ImageData* imageData, int r, weightFunction func);
 
 protected:
-	SPHDomain* sphDomain;
+	SPHDomain* sphDomain = nullptr;
+	ImageData* imageData = nullptr;
+	UINT dim[3] = { 0, 0, 0 };
+	glm::vec3 size;
 	FuncType type = BSPLINE;
 };

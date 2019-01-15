@@ -10,6 +10,7 @@ public:
 	~ImageData();
 
 	void allocate2DImage(UINT* dim, double* spacing, double* origin, UINT numComps, ScalarType type);
+	void allocate3DImage(UINT* dim, double* spacing, double* origin, UINT numComps, ScalarType type);
 
 	void setSpacing(double x, double y, double z)
 	{ 

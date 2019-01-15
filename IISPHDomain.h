@@ -2,22 +2,23 @@
 #include "Engine/MathHelper.h"
 #include "Particle.h"
 
-class ThreadedSPHDomain
+// IISPH from the paper "Implicit Incompressible SPH" which describes the use of Relaxed Jacobi method to optimize densities
+// for incompressible flow.
+class IISPHDomain
 {
 public:
 	// Sets the particles and initializes the bounds
 	void initParticles(std::vector<SPHParticle> particles, glm::vec3 origin, glm::vec3 size, GLfloat bufferRatio = 0.1f);
+	void initParticles(std::vector<IISPHParticle> particles, glm::vec3 origin, glm::vec3 size, GLfloat bufferRatio = 0.1f);
 
-	void calcDensity(int threadID, int numThreads);
-	void calcForces(int threadID, int numThreads);
-	void integrate(int threadID, int numThreads);
+	void calcDensity();
+	void calcNonPressureForces();
+	void jacobiPressureSolve();
 	void update(GLfloat dt);
 	void collision(glm::vec3 pos, glm::vec3& v);
 
 public:
-	std::vector<SPHParticle> particles;
-	std::vector<std::vector<SPHParticle*>> bins;
-	GLfloat dt = -1.0f;
+	std::vector<IISPHParticle> particles;
 
 	glm::vec3 origin;
 	glm::vec3 size;

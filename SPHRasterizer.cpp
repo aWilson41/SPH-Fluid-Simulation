@@ -17,22 +17,27 @@ static int calcIndex(int x, int y, int z, int width, int height) { return x + (y
 static GLfloat linearWeight(glm::vec3 diff) { return glm::length(diff); }
 static GLfloat bSplineWeight(glm::vec3 diff) { return NX(diff.x) * NX(diff.y) * NX(diff.z); }
 
+SPHRasterizer::~SPHRasterizer()
+{
+	if (imageData != nullptr)
+		delete imageData;
+}
+
 // Returns the domain rasterized onto an image contained within the bounds
-ImageData SPHRasterizer::rasterize(UINT* dim, double* spacing)
+void SPHRasterizer::update()
 {
 	// Allocate the image
 	GLfloat* bounds = sphDomain->bounds;
 	double origin[3] = { bounds[0], bounds[2], bounds[4] };
-	ImageData data;
-	data.allocate2DImage(dim, spacing, origin, 1, ScalarType::FLOAT_T);
+	imageData = new ImageData();
+	double spacing[3] = { size.x / dim[0], size.y / dim[1], size.y / dim[2] };
+	imageData->allocate3DImage(dim, spacing, origin, 1, ScalarType::FLOAT_T);
 
 	// Fill the image
 	if (type == LINEAR)
-		raster(&data, 2, &linearWeight);
+		raster(imageData, 2, &linearWeight);
 	else if (type == BSPLINE)
-		raster(&data, 2, &bSplineWeight);
-
-	return data;
+		raster(imageData, 2, &bSplineWeight);
 }
 
 void SPHRasterizer::raster(ImageData* imageData, int r, weightFunction func)
@@ -40,7 +45,7 @@ void SPHRasterizer::raster(ImageData* imageData, int r, weightFunction func)
 	double* spacing = imageData->getSpacing();
 	glm::vec3 nodeSize = glm::vec3(spacing[0], spacing[1], spacing[2]);
 	glm::vec3 invNodeSize = 1.0f / nodeSize;
-	float invNodeVolume = 1.0f / (spacing[0] * spacing[1] * spacing[2]);
+	float invNodeVolume = static_cast<float>(1.0 / (spacing[0] * spacing[1] * spacing[2]));
 
 	double* org = imageData->getOrigin();
 	glm::vec3 origin = glm::vec3(org[0], org[1], org[2]);
@@ -50,7 +55,7 @@ void SPHRasterizer::raster(ImageData* imageData, int r, weightFunction func)
 
 	for (UINT i = 0; i < sphDomain->particles.size(); i++)
 	{
-		Particle& p = sphDomain->particles[i];
+		SPHParticle& p = sphDomain->particles[i];
 		glm::vec3 pPos = p.getPos();
 		int gridPosX = static_cast<int>((pPos.x - origin.x) * invNodeSize.x);
 		int gridPosY = static_cast<int>((pPos.y - origin.y) * invNodeSize.y);
@@ -62,11 +67,11 @@ void SPHRasterizer::raster(ImageData* imageData, int r, weightFunction func)
 		int endY = static_cast<UINT>(MathHelp::clamp(gridPosY + r + 1, 0, static_cast<int>(dim[1])));
 		int startZ = static_cast<UINT>(MathHelp::clamp(gridPosZ - r, 0, static_cast<int>(dim[2])));
 		int endZ = static_cast<UINT>(MathHelp::clamp(gridPosZ + r + 1, 0, static_cast<int>(dim[2])));
-		for (UINT z = startZ; z < endZ; z++)
+		for (int z = startZ; z < endZ; z++)
 		{
-			for (UINT y = startY; y < endY; y++)
+			for (int y = startY; y < endY; y++)
 			{
-				for (UINT x = startX; x < endX; x++)
+				for (int x = startX; x < endX; x++)
 				{
 					glm::vec3 nodePos = glm::vec3(x, y, z) * nodeSize + nodeSize * 0.5f + origin;
 					glm::vec3 diff = (p.getPos() - nodePos) * invNodeSize;

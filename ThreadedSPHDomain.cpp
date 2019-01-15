@@ -52,7 +52,7 @@ static void threadedIntegrate(void* data)
 	sphDomain->integrate(threadInfo->ThreadID, threadInfo->NumberOfThreads);
 }
 
-void ThreadedSPHDomain::initParticles(std::vector<Particle> particles, glm::vec3 origin, glm::vec3 size, GLfloat bufferRatio)
+void ThreadedSPHDomain::initParticles(std::vector<SPHParticle> particles, glm::vec3 origin, glm::vec3 size, GLfloat bufferRatio)
 {
 	ThreadedSPHDomain::particles = particles;
 	ThreadedSPHDomain::origin = origin;
@@ -85,7 +85,7 @@ void ThreadedSPHDomain::calcDensity(int threadID, int numThreads)
 	// Calculate the density and pressure between particles using the local areas
 	for (UINT i = threadID; i < particles.size(); i += numThreads)
 	{
-		Particle* p1 = &particles[i];
+		SPHParticle* p1 = &particles[i];
 		GLfloat densitySum = 0.0f;
 		p1->neighbors.clear();
 
@@ -100,9 +100,9 @@ void ThreadedSPHDomain::calcDensity(int threadID, int numThreads)
 				for (int x = bounds[0]; x < bounds[1]; x++)
 				{
 					int binIndex = calcIndex(x, y, z, gridWidth, gridHeight);
-					for (int j = 0; j < bins[binIndex].size(); j++)
+					for (UINT j = 0; j < bins[binIndex].size(); j++)
 					{
-						Particle* p2 = bins[binIndex][j];
+						SPHParticle* p2 = bins[binIndex][j];
 						glm::vec3 dist = p1->getPos() - p2->getPos();
 						// IE: If (dist between centers of spheres < r1 + r2). But for our spheres r1=r2 so just use diameter
 						if (glm::dot(dist, dist) <= h2)
@@ -127,13 +127,13 @@ void ThreadedSPHDomain::calcForces(int threadID, int numThreads)
 	glm::vec3 g = glm::vec3(0.0f, -9.8f, 0.0f);
 	for (UINT i = threadID; i < particles.size(); i += numThreads)
 	{
-		Particle& p1 = particles[i];
+		SPHParticle& p1 = particles[i];
 		glm::vec3 fPressure = glm::vec3(0.0f);
 		glm::vec3 fViscosity = glm::vec3(0.0f);
 
 		for (UINT j = 0; j < p1.neighbors.size(); j++)
 		{
-			Particle* p2 = p1.neighbors[j];
+			SPHParticle* p2 = p1.neighbors[j];
 			glm::vec3 dist = p1.getPos() - p2->getPos();
 
 			// Pressure force density
@@ -240,10 +240,10 @@ void ThreadedSPHDomain::update(GLfloat dt)
 	ThreadedSPHDomain::dt = dt;
 
 	// Bin the particles into local areas
-	bins = std::vector<std::vector<Particle*>>(gridWidth * gridHeight * gridDepth);
+	bins = std::vector<std::vector<SPHParticle*>>(gridWidth * gridHeight * gridDepth);
 	for (UINT i = 0; i < particles.size(); i++)
 	{
-		Particle* p = &particles[i];
+		SPHParticle* p = &particles[i];
 		p->gridX = MathHelp::clamp(static_cast<int>(gridWidth * (p->pos->x - bufferBounds[0]) / bufferSize.x), 0, gridWidth - 1);
 		p->gridY = MathHelp::clamp(static_cast<int>(gridHeight * (p->pos->y - bufferBounds[2]) / bufferSize.y), 0, gridHeight - 1);
 		p->gridZ = MathHelp::clamp(static_cast<int>(gridDepth * (p->pos->z - bufferBounds[4]) / bufferSize.z), 0, gridDepth - 1);

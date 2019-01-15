@@ -28,6 +28,8 @@ void TrackballCameraInteractor::mouseScroll(GLfloat ds) { cam->zoom(-ds); }
 
 void TrackballCameraInteractor::windowResize(int width, int height)
 {
+	WindowInteractor::windowResize(width, height);
+
 	screenSize = glm::vec2(width, height);
 	cam->setPerspective(45.0f, static_cast<GLfloat>(width) / height, 0.1f, 10000.0f);
 }

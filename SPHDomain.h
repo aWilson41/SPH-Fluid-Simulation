@@ -6,7 +6,7 @@ class SPHDomain
 {
 public:
 	// Sets the particles and initializes the bounds
-	void initParticles(std::vector<Particle> particles, glm::vec3 origin, glm::vec3 size, GLfloat bufferRatio = 0.1f);
+	void initParticles(std::vector<SPHParticle> particles, glm::vec3 origin, glm::vec3 size, GLfloat bufferRatio = 0.1f);
 
 	void calcDensity();
 	void calcForces();
@@ -14,7 +14,7 @@ public:
 	void collision(glm::vec3 pos, glm::vec3& v);
 
 public:
-	std::vector<Particle> particles;
+	std::vector<SPHParticle> particles;
 
 	glm::vec3 origin;
 	glm::vec3 size;

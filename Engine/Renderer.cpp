@@ -17,6 +17,16 @@ Renderer::~Renderer()
 
 void Renderer::addMaterial(Material material) { materials.push_back(new Material(material)); }
 
+bool Renderer::containsRenderItem(AbstractMapper* mapper)
+{
+	for (UINT i = 0; i < mappers.size(); i++)
+	{
+		if (mappers[i] == mapper)
+			return true;
+	}
+	return false;
+}
+
 void Renderer::render()
 {
 	for (UINT i = 0; i < mappers.size(); i++)

@@ -1,4 +1,4 @@
-#include "SPHDomain.h"
+#include "IISPHDomain.h"
 #include "Constants.h"
 
 // Poly6 Kernel
@@ -32,11 +32,42 @@ static GLfloat laplaceKernel(glm::vec3 x)
 
 static int calcIndex(int x, int y, int z, int width, int height) { return x + width * (y + height * z); }
 
-void SPHDomain::initParticles(std::vector<SPHParticle> particles, glm::vec3 origin, glm::vec3 size, GLfloat bufferRatio)
+void IISPHDomain::initParticles(std::vector<SPHParticle> particles, glm::vec3 origin, glm::vec3 size, GLfloat bufferRatio)
 {
-	SPHDomain::particles = particles;
-	SPHDomain::origin = origin;
-	SPHDomain::size = size;
+	IISPHDomain::particles.resize(particles.size());
+	for (UINT i = 0; i < particles.size(); i++)
+	{
+		IISPHDomain::particles[i] = IISPHParticle(particles[i]);
+	}
+	IISPHDomain::origin = origin;
+	IISPHDomain::size = size;
+	bounds[0] = origin.x;
+	bounds[1] = origin.x + size.x;
+	bounds[2] = origin.y;
+	bounds[3] = origin.y + size.y;
+	bounds[4] = origin.z;
+	bounds[5] = origin.z + size.z;
+
+	glm::vec3 buffer = size * bufferRatio;
+	bufferBounds[0] = bounds[0] - buffer[0];
+	bufferBounds[1] = bounds[1] + buffer[0];
+	bufferBounds[2] = bounds[2] - buffer[1];
+	bufferBounds[3] = bounds[3] + buffer[1];
+	bufferBounds[4] = bounds[4] - buffer[2];
+	bufferBounds[5] = bounds[5] + buffer[2];
+	bufferSize = size + buffer;
+
+	glm::vec3 spacing = bufferSize / h;
+	gridWidth = static_cast<int>(spacing.x);
+	gridHeight = static_cast<int>(spacing.y);
+	gridDepth = static_cast<int>(spacing.z);
+}
+
+void IISPHDomain::initParticles(std::vector<IISPHParticle> particles, glm::vec3 origin, glm::vec3 size, GLfloat bufferRatio)
+{
+	IISPHDomain::particles = particles;
+	IISPHDomain::origin = origin;
+	IISPHDomain::size = size;
 	bounds[0] = origin.x;
 	bounds[1] = origin.x + size.x;
 	bounds[2] = origin.y;
@@ -60,13 +91,13 @@ void SPHDomain::initParticles(std::vector<SPHParticle> particles, glm::vec3 orig
 }
 
 // Calculate, density, pressures, and save the neighbors
-void SPHDomain::calcDensity()
+void IISPHDomain::calcDensity()
 {
 	// Bin the particles into local areas
-	std::vector<std::vector<SPHParticle*>> bins(gridWidth * gridHeight * gridDepth);
+	std::vector<std::vector<Particle*>> bins(gridWidth * gridHeight * gridDepth);
 	for (UINT i = 0; i < particles.size(); i++)
 	{
-		SPHParticle* p = &particles[i];
+		IISPHParticle* p = &particles[i];
 		p->gridX = MathHelp::clamp(static_cast<int>(gridWidth * (p->pos->x - bufferBounds[0]) / bufferSize.x), 0, gridWidth - 1);
 		p->gridY = MathHelp::clamp(static_cast<int>(gridHeight * (p->pos->y - bufferBounds[2]) / bufferSize.y), 0, gridHeight - 1);
 		p->gridZ = MathHelp::clamp(static_cast<int>(gridDepth * (p->pos->z - bufferBounds[4]) / bufferSize.z), 0, gridDepth - 1);
@@ -77,7 +108,7 @@ void SPHDomain::calcDensity()
 	// Calculate the density and pressure between particles using the local areas
 	for (UINT i = 0; i < particles.size(); i++)
 	{
-		SPHParticle* p1 = &particles[i];
+		IISPHParticle* p1 = &particles[i];
 		GLfloat densitySum = 0.0f;
 		p1->neighbors.clear();
 
@@ -94,7 +125,7 @@ void SPHDomain::calcDensity()
 					int binIndex = calcIndex(x, y, z, gridWidth, gridHeight);
 					for (UINT j = 0; j < bins[binIndex].size(); j++)
 					{
-						SPHParticle* p2 = bins[binIndex][j];
+						IISPHParticle* p2 = static_cast<IISPHParticle*>(bins[binIndex][j]);
 						glm::vec3 dist = p1->getPos() - p2->getPos();
 						// IE: If (dist between centers of spheres < r1 + r2). But for our spheres r1=r2 so just use diameter
 						if (glm::dot(dist, dist) <= h2)
@@ -109,62 +140,131 @@ void SPHDomain::calcDensity()
 		}
 
 		p1->density = densitySum;// / PARTICLE_VOLUME;
-		// Pressure = 0 when density = rest density
-		//p1.pressure = STIFFNESS * (p1.density - REST_DENSITY);
 		p1->pressure = KAPPA * REST_DENSITY / GAMMA * (std::pow(p1->density / REST_DENSITY, GAMMA) - 1.0f); // Taits formulation
 	}
-
-	//for (UINT i = 0; i < particles.size(); i++)
-	//{
-	//	Particle& p1 = particles[i];
-	//	GLfloat densitySum = 0.0f;
-	//	p1.neighbors.clear();
-	//	for (UINT j = 0; j < particles.size(); j++)
-	//	{
-	//		Particle* p2 = &particles[j];
-	//		glm::vec3 dist = p1.getPos() - p2->getPos();
-	//		// IE: If (dist between centers of spheres < r1 + r2). But for our spheres r1=r2 so just use diameter
-	//		if (glm::dot(dist, dist) <= h2)
-	//		{
-	//			if (i != j)
-	//				p1.neighbors.push_back(p2);
-	//			densitySum += p2->mass * kernel(dist);
-	//		}
-	//	}
-	//	p1.density = densitySum;
-	//	// Pressure = 0 when density = rest density
-	//	//p1.pressure = STIFFNESS * (p1.density - REST_DENSITY);
-	//	p1.pressure = KAPPA * REST_DENSITY / GAMMA * (std::pow(p1.density / REST_DENSITY, GAMMA) - 1.0f); // Taits formulation
-	//}
 }
 
-void SPHDomain::calcForces()
-{ 
+void IISPHDomain::calcNonPressureForces()
+{
+	// Compute predicted velocity from non pressure forces
 	glm::vec3 g = glm::vec3(0.0f, -9.8f, 0.0f);
 	for (UINT i = 0; i < particles.size(); i++)
 	{
-		SPHParticle& p1 = particles[i];
+		IISPHParticle& p1 = particles[i];
 		glm::vec3 fPressure = glm::vec3(0.0f);
 		glm::vec3 fViscosity = glm::vec3(0.0f);
+		p1.dii = glm::vec3(0.0f);
 
 		for (UINT j = 0; j < p1.neighbors.size(); j++)
 		{
-			SPHParticle* p2 = p1.neighbors[j];
+			IISPHParticle* p2 = static_cast<IISPHParticle*>(p1.neighbors[j]);
 			glm::vec3 dist = p1.getPos() - p2->getPos();
-
-			// Pressure force density
-			//fPressure -= p2->mass * (p2->pressure + p1.pressure) / (2.0f * p2->density) * gradKernel(dist);
-			fPressure -= p2->mass * p1.mass * (p1.pressure / (p1.density * p1.density) + p2->pressure / (p2->density * p2->density)) * gradKernel(dist);
 
 			// Viscosity force density
 			fViscosity += p2->mass * (p2->velocity - p1.velocity) / p2->density * laplaceKernel(dist);
+
+			p1.dii -= p2->mass / (p1.density * p1.density) * gradKernel(dist);
 		}
 
-		p1.accel = (fPressure + VISCOSITY * fViscosity /* + fSurface*/) / p1.density + g;
+		// Compute velocity from non-pressure forces, we will then optimize pressure forces
+		p1.newVelocity = p1.velocity + (VISCOSITY * fViscosity + g * p1.density) * TIMESTEP / p1.mass;
+		p1.dii *= TIMESTEP * TIMESTEP;
+	}
+	// Compute predicted density
+	for (UINT i = 0; i < particles.size(); i++)
+	{
+		IISPHParticle& p1 = particles[i];
+		p1.aii = 0.0f;
+
+		GLfloat dp = 0.0f; // Change in pressure
+		for (UINT j = 0; j < p1.neighbors.size(); j++)
+		{
+			IISPHParticle* p2 = static_cast<IISPHParticle*>(p1.neighbors[j]);
+			glm::vec3 dist = p1.getPos() - p2->getPos();
+
+			glm::vec3 gradWeight = gradKernel(dist);
+			dp += p2->mass * glm::dot((p2->newVelocity - p1.newVelocity), gradWeight);
+
+			glm::vec3 dji = p1.mass / (p1.density * p1.density) * gradWeight;
+			p1.aii += p2->mass * glm::dot(p1.dii - dji, gradWeight); // Eq12
+		}
+		p1.newDensity = p1.density + dp * TIMESTEP;
+		p1.p0 = 0.5f * p1.prevPressure;
 	}
 }
 
-void SPHDomain::collision(glm::vec3 pos, glm::vec3& v)
+void IISPHDomain::jacobiPressureSolve()
+{
+	GLfloat omega = 0.1f;
+	GLfloat tempErrorThreshold = 0.1f;
+	GLfloat dt2 = TIMESTEP * TIMESTEP;
+
+	// Finally do the relaxed jacobi iterations
+	UINT l = 0;
+	GLfloat avgDensityError = 0.0f;
+	while (avgDensityError > 0.1f && l < 2)
+	{
+		for (UINT i = 0; i < particles.size(); i++)
+		{
+			IISPHParticle& p1 = particles[i];
+			
+			for (UINT j = 0; j < p1.neighbors.size(); j++)
+			{
+				IISPHParticle* p2 = static_cast<IISPHParticle*>(p1.neighbors[j]);
+				glm::vec3 dist = p1.getPos() - p2->getPos();
+
+				p1.dij_pj -= p2->mass / (p2->density * p2->density) * p2->prevPressure * gradKernel(dist);
+			}
+		}
+
+		for (UINT i = 0; i < particles.size(); i++)
+		{
+			IISPHParticle& p1 = particles[i];
+
+			GLfloat optimizedPressure = 0.0f;
+			for (UINT j = 0; j < p1.neighbors.size(); j++)
+			{
+				IISPHParticle* p2 = static_cast<IISPHParticle*>(p1.neighbors[j]);
+				glm::vec3 dist = p1.getPos() - p2->getPos();
+
+				glm::vec3 gradWeight = gradKernel(dist);
+				glm::vec3 dji = p1.mass / (p1.density * p1.density) * gradWeight;
+				glm::vec3 dji_pi = dji * p1.prevPressure;
+				optimizedPressure += p2->mass * glm::dot(p1.dij_pj - p2->dii * p2->prevPressure - (p2->dij_pj - dji_pi), gradWeight);
+			}
+
+			GLfloat newDensity = p1.p0 - p1.newDensity;
+			p1.pressure = (1.0f - omega) * p1.prevPressure + (omega / p1.aii) * (newDensity - dt2 * optimizedPressure);
+
+			newDensity = REST_DENSITY * ((p1.aii * p1.pressure + optimizedPressure) * dt2 - newDensity) + REST_DENSITY;
+			avgDensityError += newDensity - REST_DENSITY;
+		}
+
+		avgDensityError /= particles.size();
+		printf("Density Error: %f\n", avgDensityError);
+		l++;
+	}
+}
+
+void IISPHDomain::update(GLfloat dt)
+{
+	calcDensity();
+	calcNonPressureForces();
+	jacobiPressureSolve();
+	//calcForces();
+
+	// Integrate the velocity and position and do collision
+	for (UINT i = 0; i < particles.size(); i++)
+	{
+		IISPHParticle& p = particles[i];
+		p.updateVelocity(dt);
+		collision(p.getPos(), p.velocity);
+		p.updatePos(dt);
+		p.prevPressure = p.pressure;
+	}
+}
+
+void IISPHDomain::collision(glm::vec3 pos, glm::vec3& v)
 {
 	// Collision
 	glm::vec3 normal = glm::vec3(0.0f);
@@ -236,20 +336,5 @@ void SPHDomain::collision(glm::vec3 pos, glm::vec3& v)
 			// Apply dynamic friction
 			v = vt + FRICTION * vn * normalize(vt);
 		}
-	}
-}
-
-void SPHDomain::update(GLfloat dt)
-{
-	calcDensity();
-	calcForces();
-
-	// Integrate the velocity and position and do collision
-	for (UINT i = 0; i < particles.size(); i++)
-	{
-		Particle& p = particles[i];
-		p.updateVelocity(dt);
-		collision(p.getPos(), p.velocity);
-		p.updatePos(dt);
 	}
 }

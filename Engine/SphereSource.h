@@ -25,7 +25,7 @@ public:
 protected:
 	PolyData* outputData = nullptr;
 
-	glm::vec3 origin = glm::vec3(-0.5f, 0.0f, -0.5f);
+	glm::vec3 origin = glm::vec3(0.0f, 0.0f, 0.0f);
 	GLfloat radius = 0.5f;
 	GLuint divTheta = 8;
 	GLuint divPhi = 8;

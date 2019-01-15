@@ -23,10 +23,13 @@ int main(int argc, char *argv[])
 	Renderer ren;
 	ren.setCamera(&cam);
 	ren.addMaterial(Material(glm::vec3(0.2f, 0.4f, 0.2f), 0.5f));
+	ren.addMaterial(Material(glm::vec3(0.2f, 0.2f, 0.2f), 0.5f));
+	ren.addMaterial(Material(glm::vec3(0.0f, 0.0f, 0.2f), 0.5f));
 	renWindow.setRenderer(&ren);
 
 	// Setup the camera interactor (maps user window input to camera)
 	SPHInteractor iren;
+	iren.setRenderer(&ren);
 	iren.setCamera(&cam);
 	renWindow.setInteractor(&iren);
 	ren.addRenderItem(iren.getParticleMapper());

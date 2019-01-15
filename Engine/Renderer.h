@@ -20,6 +20,8 @@ public:
 	void addRenderItem(AbstractMapper* mapper) { mappers.push_back(mapper); }
 	void addMaterial(Material material);
 
+	bool containsRenderItem(AbstractMapper* mapper);
+
 	Material* getMaterial(UINT i) { return materials[i]; }
 	AbstractMapper* getRenderItem(UINT i) { return mappers[i]; }
 

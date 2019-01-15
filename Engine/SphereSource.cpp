@@ -16,7 +16,7 @@ void SphereSource::update()
 	UINT vertexCount = (divTheta - 1) * divPhi + 2;
 	outputData->allocateSharedVertexData(vertexCount, TRIANGLE);
 	glm::vec3* vData = reinterpret_cast<glm::vec3*>(outputData->getVertexData());
-	vData[0] = glm::vec3(0.0f, radius, 0.0f);
+	vData[0] = glm::vec3(0.0f, radius, 0.0f) + origin;
 
 	UINT iter = 1;
 	for (UINT j = 0; j < divTheta - 1; j++)
@@ -32,10 +32,10 @@ void SphereSource::update()
 			GLfloat x = sp * ca;
 			GLfloat y = cp;
 			GLfloat z = sp * sa;
-			vData[iter++] = glm::vec3(x, y, z) * radius;
+			vData[iter++] = glm::vec3(x, y, z) * radius + origin;
 		}
 	}
-	vData[iter] = glm::vec3(0.0f, -radius, 0.0f);
+	vData[iter] = glm::vec3(0.0f, -radius, 0.0f) + origin;
 
 	// Normals
 	outputData->allocateNormalData();

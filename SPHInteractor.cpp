@@ -3,18 +3,15 @@
 #include "Engine/GlyphPolyDataMapper.h"
 #include "Engine/ImageData.h"
 #include "Engine/PNGWriter.h"
+#include "Engine/RawImageWriter.h"
+#include "Engine/Renderer.h"
 #include "Engine/SphereSource.h"
-
-#ifdef MULTITHREAD
-#include "ThreadedSPHDomain.h"
-#else
+#include "Engine/TrackballCamera.h"
 #include "SPHDomain.h"
-#endif
-
-#ifdef TIMER
+#include "SPHRasterizer.h"
+#include "ThreadedSPHDomain.h"
+#include "IISPHDomain.h"
 #include <chrono>
-#endif
-
 #include <GLFW/glfw3.h>
 #include <tuple>
 
@@ -22,10 +19,10 @@ SPHInteractor::SPHInteractor()
 {
 	// Set the particle positions
 	std::vector<glm::vec3> particlePos;
-	GLfloat iterLength = h / 1.8f; // Squish the particles together a bit for initialization
+	GLfloat iterLength = h / 1.5f; // Squish the particles together a bit for initialization
 
 	// Sphere initialization
-	glm::vec3 center = glm::vec3(0.0f, 0.5f, 0.0f);
+	/*glm::vec3 center = glm::vec3(0.0f, 0.5f, 0.0f);
 	geom3d::Rect bounds = geom3d::Rect(glm::vec3(0.0f, 0.5f, 0.0f), glm::vec3(1.5f, 1.0f, 1.5f));
 	glm::vec3 start = bounds.origin();
 	glm::vec3 end = start + bounds.size();
@@ -41,10 +38,10 @@ SPHInteractor::SPHInteractor()
 					particlePos.push_back(pos);
 			}
 		}
-	}
+	}*/
 
 	// Rect
-	/*geom3d::Rect bounds = geom3d::Rect(glm::vec3(0.0f, 0.5f, 0.0f), glm::vec3(1.5f, 1.0f, 0.75f));
+	geom3d::Rect bounds = geom3d::Rect(glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(1.0f, 2.0f, 1.0f));
 	glm::vec3 start = bounds.origin();
 	glm::vec3 end = start + bounds.size();
 	for (GLfloat x = start.x; x < end.x; x += iterLength)
@@ -53,32 +50,32 @@ SPHInteractor::SPHInteractor()
 		{
 			for (GLfloat z = start.z; z < end.z; z += iterLength)
 			{
-				if (x < 0.0f && x > -0.5f &&
-					y < 1.0f && y > 0.0f &&
-					z < 0.25f && z > -0.25f)
+				if (x < 0.5f && x > -0.5f &&
+					y < 1.5f && y > 0.0f &&
+					z < 0.5f && z > -0.5f)
 					particlePos.push_back(glm::vec3(x, y, z));
 			}
 		}
-	}*/
+	}
 
 	printf("Num Particles: %d\n", static_cast<UINT>(particlePos.size()));
 	// Create a uv sphere source for instancing
-	sphereSource = new SphereSource();
-	sphereSource->setRadius(h * 0.5f);
-	sphereSource->update();
+	particleSphereSource = new SphereSource();
+	particleSphereSource->setRadius(h * 0.5f);
+	particleSphereSource->update();
 	// Create the particle mapper
 	particleMapper = new GlyphPolyDataMapper();
-	particleMapper->setInput(sphereSource->getOutput());
+	particleMapper->setInput(particleSphereSource->getOutput());
 	particleMapper->allocateOffsets(static_cast<UINT>(particlePos.size()));
 	particleMapper->allocateColorData(static_cast<UINT>(particlePos.size()));
 	glm::vec3* offsetData = reinterpret_cast<glm::vec3*>(particleMapper->getOffsetData());
 	glm::vec3* colorData = reinterpret_cast<glm::vec3*>(particleMapper->getColorData());
 	// Set the offset data of particle mapper with the generate positions and create the particles
-	std::vector<Particle> particles(particlePos.size());
+	std::vector<SPHParticle> particles(particlePos.size());
 	for (UINT i = 0; i < particlePos.size(); i++)
 	{
 		offsetData[i] = particlePos[i];
-		particles[i] = Particle(&offsetData[i], PARTICLE_MASS);
+		particles[i] = SPHParticle(&offsetData[i], PARTICLE_MASS);
 	}
 
 	// Setup the color function to use for the particles
@@ -88,19 +85,26 @@ SPHInteractor::SPHInteractor()
 	colorFunc.push_back(std::tuple<GLfloat, glm::vec3>(1.5f, glm::vec3(1.0f, 1.0f, 1.0f)));
 
 	// Setup the SPHDomain for simulation
-#ifdef MULTITHREAD
-	sphDomain = new ThreadedSPHDomain();
+#ifdef IISPH
+	sphDomain = new IISPHDomain();
 #else
-	sphDomain = new SPHDomain();
+	#ifdef MULTITHREAD
+		sphDomain = new ThreadedSPHDomain();
+	#else
+		sphDomain = new SPHDomain();
 #endif
-	sphDomain->initParticles(particles, bounds.origin(), bounds.size());// +glm::vec3(1.5f, 0.0f, 0.0f));
+#endif
+	sphDomain->initParticles(particles, bounds.origin() - bounds.size() * 0.5f * glm::vec3(1.0f, 0.0f, 1.0f), bounds.size() * glm::vec3(2.0f, 5.0f, 2.0f));// +glm::vec3(1.5f, 0.0f, 0.0f));
 	updateParticleMapper();
 }
 SPHInteractor::~SPHInteractor()
 {
-	delete sphereSource;
-	delete particleMapper;
-	delete sphDomain;
+	if (particleSphereSource != nullptr)
+		delete particleSphereSource;
+	if (particleMapper != nullptr)
+		delete particleMapper;
+	if (sphDomain != nullptr)
+		delete sphDomain;
 }
 
 void SPHInteractor::keyDown(int key)
@@ -109,14 +113,18 @@ void SPHInteractor::keyDown(int key)
 		writingFrames = !writingFrames;
 	else if (key == GLFW_KEY_ENTER)
 		running = !running;
+	else if (key == GLFW_KEY_2)
+	{
+		forceScale += 1.0f;
+		printf("hit\n");
+	}
+	else if (key == GLFW_KEY_1)
+		forceScale -= 1.0f;
 }
 void SPHInteractor::keyUp(int key) { }
 
 void SPHInteractor::update()
 {
-	/*if (!running)
-		return;*/
-
 #ifdef TIMER
 	auto start = std::chrono::steady_clock::now();
 #endif
@@ -135,6 +143,46 @@ void SPHInteractor::update()
 #endif
 
 	updateParticleMapper();
+
+	if (rightButtonDown)
+	{
+		glm::vec4 ndc = glm::vec4(
+			mousePos.x * 2.0f - 1.0f,
+			1.0f - mousePos.y * 2.0f,
+			0.0f, 1.0f);
+		glm::vec4 mouseWorldPos = glm::inverse(cam->proj * cam->view) * ndc;
+		mouseWorldPos /= mouseWorldPos.w;
+
+		geom3d::Ray ray = geom3d::Ray(cam->eyePos, glm::normalize(glm::vec3(mouseWorldPos) - cam->eyePos));
+		for (UINT i = 0; i < particleMapper->getInstanceCount(); i++)
+		{
+			if (geom3d::intersectSphereRay(geom3d::Sphere(*sphDomain->particles[i].pos, r), ray))
+			{
+				sphDomain->particles[i].velocity += ray.dir * forceScale;
+				// All the particles nearby this one
+				for (UINT j = 0; j < sphDomain->particles[i].neighbors.size(); j++)
+				{
+					sphDomain->particles[i].neighbors[j]->velocity += ray.dir * forceScale;
+				}
+			}
+		}
+	}
+
+	/*SPHRasterizer rasterizer;
+	rasterizer.setSPHDomain(sphDomain);
+	GLfloat max = sphDomain->bufferSize.x;
+	if (sphDomain->bufferSize.y > max)
+		max = sphDomain->bufferSize.y;
+	else if (sphDomain->bufferSize.z > max)
+		max = sphDomain->bufferSize.z;
+	glm::vec3 size = sphDomain->bufferSize * 2.0f / max;
+	rasterizer.setDim(size.x, size.y, size.z);
+	rasterizer.setSize(sphDomain->bufferSize);
+	rasterizer.update();
+	RawImageWriter writer;
+	writer.setInput(rasterizer.getOutput());
+	writer.setFileName("C:/Users/Andx_/Desktop/rawTest.raw");
+	writer.update();*/
 
 #ifdef OUTPUTFRAMES
 	if (running && writingFrames && iter < NUMFRAMES)

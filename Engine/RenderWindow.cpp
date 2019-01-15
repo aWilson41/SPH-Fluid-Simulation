@@ -4,7 +4,7 @@
 #include <GLFW/glfw3.h>
 
 //#define FULLSCREEN
-static const GLfloat screenRatio = 1.0f;
+static const GLfloat screenRatio = 0.9f;
 
 RenderWindow::RenderWindow()
 {

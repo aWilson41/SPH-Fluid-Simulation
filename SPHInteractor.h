@@ -3,13 +3,11 @@
 #include "Engine/TrackballCameraInteractor.h"
 
 class GlyphPolyDataMapper;
+class IISPHDomain;
+class Renderer;
 class SphereSource;
-
-#ifdef MULTITHREAD
-class ThreadedSPHDomain;
-#else
 class SPHDomain;
-#endif
+class ThreadedSPHDomain;
 
 class SPHInteractor : public TrackballCameraInteractor
 {
@@ -24,19 +22,28 @@ public:
 	void update();
 	void updateParticleMapper();
 
+	void setRenderer(Renderer* ren) { SPHInteractor::ren = ren; }
 	GlyphPolyDataMapper* getParticleMapper() { return particleMapper; }
 
-public:
 protected:
-#ifdef MULTITHREAD
-	ThreadedSPHDomain* sphDomain = nullptr;
+#ifdef IISPH
+	IISPHDomain* sphDomain = nullptr;
 #else
-	SPHDomain* sphDomain = nullptr;
+	#ifdef MULTITHREAD
+		ThreadedSPHDomain* sphDomain = nullptr;
+	#else
+		SPHDomain* sphDomain = nullptr;
 #endif
-	SphereSource* sphereSource = nullptr;
+#endif
+
+	Renderer* ren = nullptr;
+	SphereSource* particleSphereSource = nullptr;
 	GlyphPolyDataMapper* particleMapper = nullptr;
 	std::vector<std::tuple<GLfloat, glm::vec3>> colorFunc;
+
 	UINT iter = 0;
 	bool running = false;
 	bool writingFrames = true;
+
+	GLfloat forceScale = 1.0f;
 };

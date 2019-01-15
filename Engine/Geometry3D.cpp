@@ -68,4 +68,18 @@ namespace geom3d
 
 	}
 	GLfloat Poly::volume() { return MathHelp::polygonVolume(this); }
+
+	// Ray
+	Ray::Ray()
+	{
+		pos = glm::vec3(0.0f, 0.0f, 0.0f);
+		dir = glm::vec3(1.0f, 0.0f, 0.0f);
+		type = RAY;
+	}
+	Ray::Ray(glm::vec3 start, glm::vec3 dir)
+	{
+		pos = start;
+		Ray::dir = dir;
+		type = RAY;
+	}
 }
