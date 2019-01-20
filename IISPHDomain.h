@@ -14,6 +14,8 @@ public:
 	void calcDensity();
 	void calcNonPressureForces();
 	void jacobiPressureSolve();
+	void calcPressureForce();
+
 	void update(GLfloat dt);
 	void collision(glm::vec3 pos, glm::vec3& v);
 

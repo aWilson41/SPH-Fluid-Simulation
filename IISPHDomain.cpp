@@ -139,8 +139,7 @@ void IISPHDomain::calcDensity()
 			}
 		}
 
-		p1->density = densitySum;// / PARTICLE_VOLUME;
-		p1->pressure = KAPPA * REST_DENSITY / GAMMA * (std::pow(p1->density / REST_DENSITY, GAMMA) - 1.0f); // Taits formulation
+		p1->density = densitySum;
 	}
 }
 
@@ -167,7 +166,7 @@ void IISPHDomain::calcNonPressureForces()
 		}
 
 		// Compute velocity from non-pressure forces, we will then optimize pressure forces
-		p1.newVelocity = p1.velocity + (VISCOSITY * fViscosity + g * p1.density) * TIMESTEP / p1.mass;
+		p1.vAdv = p1.velocity + (VISCOSITY * fViscosity / p1.density + g) * TIMESTEP;
 		p1.dii *= TIMESTEP * TIMESTEP;
 	}
 	// Compute predicted density
@@ -183,37 +182,40 @@ void IISPHDomain::calcNonPressureForces()
 			glm::vec3 dist = p1.getPos() - p2->getPos();
 
 			glm::vec3 gradWeight = gradKernel(dist);
-			dp += p2->mass * glm::dot((p2->newVelocity - p1.newVelocity), gradWeight);
+			dp += p2->mass * glm::dot((p2->vAdv - p1.vAdv), gradWeight);
 
-			glm::vec3 dji = p1.mass / (p1.density * p1.density) * gradWeight;
+			glm::vec3 dji = TIMESTEP * TIMESTEP * p1.mass / (p1.density * p1.density) * gradWeight;
 			p1.aii += p2->mass * glm::dot(p1.dii - dji, gradWeight); // Eq12
 		}
-		p1.newDensity = p1.density + dp * TIMESTEP;
-		p1.p0 = 0.5f * p1.prevPressure;
+		p1.projectedDensity = p1.density + dp * TIMESTEP;
+
+		// Set the initial guess
+		p1.pl = particles[i].pressure * 0.5f;
 	}
 }
 
 void IISPHDomain::jacobiPressureSolve()
 {
-	GLfloat omega = 0.1f;
-	GLfloat tempErrorThreshold = 0.1f;
+	GLfloat omega = 0.5f;
+	//GLfloat tempErrorThreshold = 0.1f;
 	GLfloat dt2 = TIMESTEP * TIMESTEP;
 
 	// Finally do the relaxed jacobi iterations
 	UINT l = 0;
-	GLfloat avgDensityError = 0.0f;
-	while (avgDensityError > 0.1f && l < 2)
+	while (l < 2)
 	{
 		for (UINT i = 0; i < particles.size(); i++)
 		{
 			IISPHParticle& p1 = particles[i];
-			
+			p1.dij_pj = glm::vec3(0.0f);
+
 			for (UINT j = 0; j < p1.neighbors.size(); j++)
 			{
 				IISPHParticle* p2 = static_cast<IISPHParticle*>(p1.neighbors[j]);
 				glm::vec3 dist = p1.getPos() - p2->getPos();
 
-				p1.dij_pj -= p2->mass / (p2->density * p2->density) * p2->prevPressure * gradKernel(dist);
+				glm::vec3 dij = dt2 * p2->mass / (p2->density * p2->density) * gradKernel(dist);
+				p1.dij_pj -= dij * p2->pl;
 			}
 		}
 
@@ -221,28 +223,47 @@ void IISPHDomain::jacobiPressureSolve()
 		{
 			IISPHParticle& p1 = particles[i];
 
-			GLfloat optimizedPressure = 0.0f;
+			GLfloat newPressure = 0.0f;
 			for (UINT j = 0; j < p1.neighbors.size(); j++)
 			{
 				IISPHParticle* p2 = static_cast<IISPHParticle*>(p1.neighbors[j]);
 				glm::vec3 dist = p1.getPos() - p2->getPos();
 
 				glm::vec3 gradWeight = gradKernel(dist);
-				glm::vec3 dji = p1.mass / (p1.density * p1.density) * gradWeight;
-				glm::vec3 dji_pi = dji * p1.prevPressure;
-				optimizedPressure += p2->mass * glm::dot(p1.dij_pj - p2->dii * p2->prevPressure - (p2->dij_pj - dji_pi), gradWeight);
+				glm::vec3 dji = dt2 * p1.mass / (p1.density * p1.density) * gradWeight;
+				glm::vec3 dji_pi = dji * p1.pl;
+				newPressure += p2->mass * glm::dot(p1.dij_pj - p2->dii * p2->pl - (p2->dij_pj - dji_pi), gradWeight);
 			}
 
-			GLfloat newDensity = p1.p0 - p1.newDensity;
-			p1.pressure = (1.0f - omega) * p1.prevPressure + (omega / p1.aii) * (newDensity - dt2 * optimizedPressure);
-
-			newDensity = REST_DENSITY * ((p1.aii * p1.pressure + optimizedPressure) * dt2 - newDensity) + REST_DENSITY;
-			avgDensityError += newDensity - REST_DENSITY;
+			// Mix it with the old pressure
+			GLfloat bi = REST_DENSITY - p1.projectedDensity;
+			p1.pl = (1.0f - omega) * p1.pl + (omega / p1.aii) * (bi - newPressure);
+			p1.pressure = p1.pl;
+			if (p1.pressure < 0.0f)
+				p1.pressure = 0.0f;
 		}
 
-		avgDensityError /= particles.size();
-		printf("Density Error: %f\n", avgDensityError);
 		l++;
+	}
+}
+
+void IISPHDomain::calcPressureForce()
+{
+	// Integrate the velocity and position and do collision
+	for (UINT i = 0; i < particles.size(); i++)
+	{
+		IISPHParticle& p1 = particles[i];
+
+		// Compute the pressure force from the newly computed pressure
+		glm::vec3 fPressure = glm::vec3(0.0f);
+		for (UINT j = 0; j < p1.neighbors.size(); j++)
+		{
+			SPHParticle* p2 = p1.neighbors[j];
+			glm::vec3 dist = p1.getPos() - p2->getPos();
+			fPressure -= p2->mass * p1.mass * (p1.pressure / (p1.density * p1.density) + p2->pressure / (p2->density * p2->density)) * gradKernel(dist);
+		}
+
+		p1.accel = (p1.vAdv - p1.velocity) / TIMESTEP + fPressure / p1.density;
 	}
 }
 
@@ -251,7 +272,7 @@ void IISPHDomain::update(GLfloat dt)
 	calcDensity();
 	calcNonPressureForces();
 	jacobiPressureSolve();
-	//calcForces();
+	calcPressureForce();
 
 	// Integrate the velocity and position and do collision
 	for (UINT i = 0; i < particles.size(); i++)
@@ -260,7 +281,6 @@ void IISPHDomain::update(GLfloat dt)
 		p.updateVelocity(dt);
 		collision(p.getPos(), p.velocity);
 		p.updatePos(dt);
-		p.prevPressure = p.pressure;
 	}
 }
 

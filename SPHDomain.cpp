@@ -112,6 +112,8 @@ void SPHDomain::calcDensity()
 		// Pressure = 0 when density = rest density
 		//p1.pressure = STIFFNESS * (p1.density - REST_DENSITY);
 		p1->pressure = KAPPA * REST_DENSITY / GAMMA * (std::pow(p1->density / REST_DENSITY, GAMMA) - 1.0f); // Taits formulation
+		if (p1->pressure < 0.0f)
+			p1->pressure = 0.0f;
 	}
 
 	//for (UINT i = 0; i < particles.size(); i++)
@@ -149,15 +151,15 @@ void SPHDomain::calcForces()
 
 		for (UINT j = 0; j < p1.neighbors.size(); j++)
 		{
-			SPHParticle* p2 = p1.neighbors[j];
-			glm::vec3 dist = p1.getPos() - p2->getPos();
+			SPHParticle& p2 = *p1.neighbors[j];
+			glm::vec3 dist = p1.getPos() - p2.getPos();
 
 			// Pressure force density
 			//fPressure -= p2->mass * (p2->pressure + p1.pressure) / (2.0f * p2->density) * gradKernel(dist);
-			fPressure -= p2->mass * p1.mass * (p1.pressure / (p1.density * p1.density) + p2->pressure / (p2->density * p2->density)) * gradKernel(dist);
+			fPressure -= p2.mass * p1.mass * (p1.pressure / (p1.density * p1.density) + p2.pressure / (p2.density * p2.density)) * gradKernel(dist);
 
 			// Viscosity force density
-			fViscosity += p2->mass * (p2->velocity - p1.velocity) / p2->density * laplaceKernel(dist);
+			fViscosity += p2.mass * (p2.velocity - p1.velocity) / p2.density * laplaceKernel(dist);
 		}
 
 		p1.accel = (fPressure + VISCOSITY * fViscosity /* + fSurface*/) / p1.density + g;

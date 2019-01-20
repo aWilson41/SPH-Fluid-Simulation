@@ -58,10 +58,9 @@ public:
 	IISPHParticle(glm::vec3* pos, GLfloat mass) : SPHParticle(pos, mass) { }
 	IISPHParticle(const IISPHParticle& particle) : SPHParticle(particle)
 	{
-		newDensity = particle.newDensity;
-		p0 = particle.p0;
-		prevPressure = particle.prevPressure;
-		newVelocity = particle.newVelocity;
+		projectedDensity = particle.projectedDensity;
+		pl = particle.pl;
+		vAdv = particle.vAdv;
 		dii = particle.dii;
 		aii = particle.aii;
 		dij_pj = particle.dij_pj;
@@ -69,11 +68,10 @@ public:
 	IISPHParticle(const SPHParticle& particle) : SPHParticle(particle) { }
 
 public:
-	GLfloat newDensity = 0.0f;
-	GLfloat p0 = 0.0f;
-	GLfloat prevPressure = 0.0f;
-	glm::vec3 newVelocity = glm::vec3(0.0f);
+	GLfloat projectedDensity = 0.0f;
+	glm::vec3 vAdv = glm::vec3(0.0f);
 	glm::vec3 dii = glm::vec3(0.0f);
 	GLfloat aii = 0.0f;
 	glm::vec3 dij_pj = glm::vec3(0.0f);
+	GLfloat pl = 0.0f;
 };
