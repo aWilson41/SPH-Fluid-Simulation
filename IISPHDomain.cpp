@@ -146,11 +146,11 @@ void IISPHDomain::calcDensity()
 void IISPHDomain::calcNonPressureForces()
 {
 	// Compute predicted velocity from non pressure forces
+	GLfloat dt2 = TIMESTEP * TIMESTEP;
 	glm::vec3 g = glm::vec3(0.0f, -9.8f, 0.0f);
 	for (UINT i = 0; i < particles.size(); i++)
 	{
 		IISPHParticle& p1 = particles[i];
-		glm::vec3 fPressure = glm::vec3(0.0f);
 		glm::vec3 fViscosity = glm::vec3(0.0f);
 		p1.dii = glm::vec3(0.0f);
 
@@ -166,8 +166,9 @@ void IISPHDomain::calcNonPressureForces()
 		}
 
 		// Compute velocity from non-pressure forces, we will then optimize pressure forces
-		p1.vAdv = p1.velocity + (VISCOSITY * fViscosity / p1.density + g) * TIMESTEP;
-		p1.dii *= TIMESTEP * TIMESTEP;
+		//p1.vAdv = p1.velocity + (VISCOSITY * fViscosity / p1.density + g) * TIMESTEP;
+		p1.vAdv = p1.velocity + (VISCOSITY * fViscosity + g * p1.density) / p1.mass * TIMESTEP;
+		p1.dii *= dt2;
 	}
 	// Compute predicted density
 	for (UINT i = 0; i < particles.size(); i++)
@@ -176,6 +177,7 @@ void IISPHDomain::calcNonPressureForces()
 		p1.aii = 0.0f;
 
 		GLfloat dp = 0.0f; // Change in pressure
+		GLfloat djiPre = dt2 * p1.mass / (p1.density * p1.density);
 		for (UINT j = 0; j < p1.neighbors.size(); j++)
 		{
 			IISPHParticle* p2 = static_cast<IISPHParticle*>(p1.neighbors[j]);
@@ -184,7 +186,7 @@ void IISPHDomain::calcNonPressureForces()
 			glm::vec3 gradWeight = gradKernel(dist);
 			dp += p2->mass * glm::dot((p2->vAdv - p1.vAdv), gradWeight);
 
-			glm::vec3 dji = TIMESTEP * TIMESTEP * p1.mass / (p1.density * p1.density) * gradWeight;
+			glm::vec3 dji = djiPre * gradWeight;
 			p1.aii += p2->mass * glm::dot(p1.dii - dji, gradWeight); // Eq12
 		}
 		p1.projectedDensity = p1.density + dp * TIMESTEP;
@@ -196,14 +198,14 @@ void IISPHDomain::calcNonPressureForces()
 
 void IISPHDomain::jacobiPressureSolve()
 {
-	GLfloat omega = 0.5f;
-	//GLfloat tempErrorThreshold = 0.1f;
+	GLfloat omega = 0.1f;
 	GLfloat dt2 = TIMESTEP * TIMESTEP;
 
 	// Finally do the relaxed jacobi iterations
 	UINT l = 0;
 	while (l < 2)
 	{
+		// Calculate displacements from other particles dij pj
 		for (UINT i = 0; i < particles.size(); i++)
 		{
 			IISPHParticle& p1 = particles[i];
@@ -238,9 +240,9 @@ void IISPHDomain::jacobiPressureSolve()
 			// Mix it with the old pressure
 			GLfloat bi = REST_DENSITY - p1.projectedDensity;
 			p1.pl = (1.0f - omega) * p1.pl + (omega / p1.aii) * (bi - newPressure);
+			if (p1.pl < 0)
+				p1.pl = 0.0f;
 			p1.pressure = p1.pl;
-			if (p1.pressure < 0.0f)
-				p1.pressure = 0.0f;
 		}
 
 		l++;
@@ -263,7 +265,8 @@ void IISPHDomain::calcPressureForce()
 			fPressure -= p2->mass * p1.mass * (p1.pressure / (p1.density * p1.density) + p2->pressure / (p2->density * p2->density)) * gradKernel(dist);
 		}
 
-		p1.accel = (p1.vAdv - p1.velocity) / TIMESTEP + fPressure / p1.density;
+		glm::vec3 nonPressureForce = (p1.vAdv - p1.velocity) * p1.mass / TIMESTEP;
+		p1.accel = (nonPressureForce + fPressure) / p1.density;
 	}
 }
 
