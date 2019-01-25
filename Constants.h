@@ -8,7 +8,7 @@ static const GLuint NUMFRAMES = 500;
 // Note: Multithreading only takes affect (becomes faster) at higher particle counts 
 // (differs for everyone. For me it doesn't start doing better till like count>~60k)
 //#define MULTITHREAD
-#define IISPH
+//#define IISPH
 
 static const GLuint FPS = 60;
 static const GLuint SUBSTEPS = 5; // Increase the substeps as particle size decreases
