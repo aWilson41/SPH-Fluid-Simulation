@@ -1,9 +1,16 @@
 #include "Renderer.h"
-#include "PolyDataMapper.h"
-#include "Shaders.h"
 #include "Material.h"
+#include "PolyDataMapper.h"
+#include "RenderPass.h"
+#include "Shaders.h"
 
-Renderer::Renderer() { Shaders::initShaders(); }
+Renderer::Renderer()
+{
+	Shaders::initShaders();
+
+	// Setup the default pass
+	startingPass = new RenderPass();
+}
 
 Renderer::~Renderer()
 {
@@ -13,6 +20,7 @@ Renderer::~Renderer()
 	{
 		delete materials[i];
 	}
+	delete startingPass;
 }
 
 void Renderer::addMaterial(Material material) { materials.push_back(new Material(material)); }
@@ -29,8 +37,10 @@ bool Renderer::containsRenderItem(AbstractMapper* mapper)
 
 void Renderer::render()
 {
-	for (UINT i = 0; i < mappers.size(); i++)
-	{
-		mappers[i]->draw(this);
-	}
+	// Call the starting pass, this should recurse through all other passes
+	startingPass->render();
+
+	// Then composite the passes
+
+	// Finally copy the final image to the back buffer
 }

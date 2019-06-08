@@ -1,9 +1,10 @@
 #pragma once
 #include "MathHelper.h"
 
+class AbstractMapper;
 class Camera;
 class Material;
-class AbstractMapper;
+class RenderPass;
 class ShaderProgram;
 
 // Does the rendering, mostly just managing the scene (there is no scene object)
@@ -39,4 +40,7 @@ protected:
 	Camera* cam = nullptr;
 	ShaderProgram* currShaderProgram = nullptr;
 	bool initialized = false;
+
+	RenderPass* startingPass = nullptr;
+	std::vector<RenderPass*> passes;
 };
