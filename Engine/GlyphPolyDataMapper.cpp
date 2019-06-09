@@ -113,28 +113,25 @@ void GlyphPolyDataMapper::updateBuffer()
 		GLint size = sizeof(GLfloat) * 3 * numPts;
 		glBufferSubData(GL_ARRAY_BUFFER, 0, size, vertexData);
 		// Set it's location and access scheme in vao
-		GLuint posAttribLocation = glGetAttribLocation(shaderID, "inPos");
-		glEnableVertexAttribArray(posAttribLocation);
-		glVertexAttribPointer(posAttribLocation, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 3, (void*)0);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 3, (void*)0);
 
 		GLint offset = size;
 
 		size = sizeof(GLfloat) * 3 * numPts;
 		glBufferSubData(GL_ARRAY_BUFFER, offset, size, normalData);
 		// Set it's location and access scheme in vao
-		GLuint normalAttribLocation = glGetAttribLocation(shaderID, "inNormal");
-		glEnableVertexAttribArray(normalAttribLocation);
-		glVertexAttribPointer(normalAttribLocation, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 3, (void*)offset);
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 3, (void*)offset);
 
 		offset += size;
 
 		size = sizeof(GLfloat) * 3 * instanceCount;
 		glBufferSubData(GL_ARRAY_BUFFER, offset, size, offsetData);
 		// Set it's location and access scheme in vao
-		GLuint offsetAttribLocation = glGetAttribLocation(shaderID, "inOffset");
-		glEnableVertexAttribArray(offsetAttribLocation);
-		glVertexAttribPointer(offsetAttribLocation, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 3, (void*)offset);
-		glVertexAttribDivisor(offsetAttribLocation, 1);
+		glEnableVertexAttribArray(4);
+		glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 3, (void*)offset);
+		glVertexAttribDivisor(4, 1);
 
 		offset += size;
 
@@ -143,10 +140,9 @@ void GlyphPolyDataMapper::updateBuffer()
 			size = sizeof(GLfloat) * 3 * instanceCount;
 			glBufferSubData(GL_ARRAY_BUFFER, offset, size, scalarData);
 			// Set it's location and access scheme in vao
-			GLuint colorAttribLocation = glGetAttribLocation(shaderID, "inColor");
-			glEnableVertexAttribArray(colorAttribLocation);
-			glVertexAttribPointer(colorAttribLocation, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 3, (void*)offset);
-			glVertexAttribDivisor(colorAttribLocation, 1);
+			glEnableVertexAttribArray(3);
+			glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 3, (void*)offset);
+			glVertexAttribDivisor(3, 1);
 		}
 	}
 	// Update index buffer if it has one and buffer has been created

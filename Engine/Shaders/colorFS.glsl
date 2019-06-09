@@ -1,9 +1,10 @@
 #version 460
 
-smooth in vec3 color;
+smooth in vec3 inFColor;
+
 out vec4 fColor;
 
 void main()
 {
-	fColor = vec4(color, 1.0);
+	fColor = vec4(inFColor, 1.0);
 }

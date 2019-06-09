@@ -9,7 +9,7 @@ Renderer::Renderer()
 	Shaders::initShaders();
 
 	// Setup the default pass
-	startingPass = new RenderPass();
+	//startingPass = new RenderPass();
 }
 
 Renderer::~Renderer()
@@ -38,9 +38,15 @@ bool Renderer::containsRenderItem(AbstractMapper* mapper)
 void Renderer::render()
 {
 	// Call the starting pass, this should recurse through all other passes
-	startingPass->render();
+	//startingPass->render();
 
 	// Then composite the passes
 
 	// Finally copy the final image to the back buffer
+
+	// Temp
+	for (UINT i = 0; i < mappers.size(); i++)
+	{
+		mappers[i]->draw(this);
+	}
 }

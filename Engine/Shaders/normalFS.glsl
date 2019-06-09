@@ -8,12 +8,12 @@ struct Material
 uniform Material mat;
 uniform vec3 lightDir;
 
-smooth in vec3 normal;
+smooth in vec3 inFNormal;
 
 out vec4 fColor;
 
 void main()
 {
-	vec3 color = clamp(dot(lightDir, normal) * mat.diffuseColor + mat.ambientColor, 0.0f, 1.0f);
+	vec3 color = clamp(dot(lightDir, inFNormal) * mat.diffuseColor + mat.ambientColor, 0.0f, 1.0f);
 	fColor = vec4(color, 1.0f);
 }

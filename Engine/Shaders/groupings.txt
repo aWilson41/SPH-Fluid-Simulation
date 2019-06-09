@@ -32,3 +32,21 @@ normalColorFS.glsl
 // Requires: Position buffer, normal buffer, uniform mvp, uniform vec3 directional light, uniform 3 comp texture
 normalTexVS.glsl
 normalTex3FS.glsl
+
+The default layout spec. This is to be able to reuse buffers allocated on the gpu. For example, two different renderers use the same layout and data but different shaders. If the layout wasn't the same we'd need to allocate the buffers twice. This avoids having to make different Mappers for each type of renderer or passing the renderer into the mapper and deciding on which shader to use.
+
+To make it extensible I will add a LayoutManager singleton to have a globally agreeable layout. Perhaps in the future I can do some string replacement shaders and modify layout locations per mapper instance.
+
+Default layout spec:
+Vertex Shaders:
+inVPos 0
+inVNormal 1
+inVTexCoord 2
+inVColor 3
+inVOffset 4
+Fragment Shaders:
+inFPos 0
+inFNormal 1
+inFTexCoord 2
+inFColor 3
+inFOffset 4

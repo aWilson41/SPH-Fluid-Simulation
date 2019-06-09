@@ -111,16 +111,14 @@ void ImageMapper::updateBuffer()
 	GLint size1 = sizeof(GLfloat) * 3 * numPts;
 	glBufferSubData(GL_ARRAY_BUFFER, 0, size1, vertexData);
 	// Set it's location and access scheme in vao
-	GLuint posAttribLocation = glGetAttribLocation(shaderID, "inPos");
-	glEnableVertexAttribArray(posAttribLocation);
-	glVertexAttribPointer(posAttribLocation, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 3, (void*)0);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 3, (void*)0);
 
 	GLint size2 = sizeof(GLfloat) * 2 * numPts;
 	glBufferSubData(GL_ARRAY_BUFFER, size1, size2, texCoordData);
 	// Set it's location and access scheme in vao
-	GLuint texCoordAttribLocation = glGetAttribLocation(shaderID, "inTexCoord");
-	glEnableVertexAttribArray(texCoordAttribLocation);
-	glVertexAttribPointer(texCoordAttribLocation, 2, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 2, (void*)size1);
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 2, (void*)size1);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);

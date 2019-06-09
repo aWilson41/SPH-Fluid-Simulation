@@ -30,7 +30,7 @@ void PolyDataMapper::update()
 	glUseProgram(shaderProgram->getProgramID());
 	const GLuint shaderID = shaderProgram->getProgramID();
 
-	// If the vbo haven't been created yet
+	// If the vbo hasn't been created yet allocate it's space
 	if (vboID == -1)
 	{
 		// Generate the vao
@@ -41,7 +41,7 @@ void PolyDataMapper::update()
 		glBindBuffer(GL_ARRAY_BUFFER, vboID);
 		glBufferData(GL_ARRAY_BUFFER, vboSize, NULL, GL_DYNAMIC_DRAW);	
 	}
-	// If it has already been created
+	// If it has already been created, check if we should udpate size
 	else
 	{
 		// Get the current vbo size
@@ -158,9 +158,8 @@ void PolyDataMapper::updateBuffer()
 		GLint size = sizeof(GLfloat) * 3 * numPts;
 		glBufferSubData(GL_ARRAY_BUFFER, 0, size, vertexData);
 		// Set it's location and access scheme in vao
-		GLuint posAttribLocation = glGetAttribLocation(shaderID, "inPos");
-		glEnableVertexAttribArray(posAttribLocation);
-		glVertexAttribPointer(posAttribLocation, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 3, (void*)0);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 3, (void*)0);
 
 		GLint offset = size;
 
@@ -170,9 +169,8 @@ void PolyDataMapper::updateBuffer()
 			size = sizeof(GLfloat) * 3 * numPts;
 			glBufferSubData(GL_ARRAY_BUFFER, offset, size, normalData);
 			// Set it's location and access scheme in vao
-			GLuint normalAttribLocation = glGetAttribLocation(shaderID, "inNormal");
-			glEnableVertexAttribArray(normalAttribLocation);
-			glVertexAttribPointer(normalAttribLocation, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 3, (void*)offset);
+			glEnableVertexAttribArray(1);
+			glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 3, (void*)offset);
 			offset += size;
 		}
 		if (hasTexCoords)
@@ -180,9 +178,8 @@ void PolyDataMapper::updateBuffer()
 			size = sizeof(GLfloat) * 2 * numPts;
 			glBufferSubData(GL_ARRAY_BUFFER, offset, size, texCoordData);
 			// Set it's location and access scheme in vao
-			GLuint texCoordAttribLocation = glGetAttribLocation(shaderID, "inTexCoord");
-			glEnableVertexAttribArray(texCoordAttribLocation);
-			glVertexAttribPointer(texCoordAttribLocation, 2, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 2, (void*)offset);
+			glEnableVertexAttribArray(2);
+			glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 2, (void*)offset);
 			offset += size;
 		}
 		if (hasScalars)
@@ -190,9 +187,8 @@ void PolyDataMapper::updateBuffer()
 			size = sizeof(GLfloat) * 3 * numPts;
 			glBufferSubData(GL_ARRAY_BUFFER, offset, size, scalarData);
 			// Set it's location and access scheme in vao
-			GLuint scalarsAttribLocation = glGetAttribLocation(shaderID, "inScalars");
-			glEnableVertexAttribArray(scalarsAttribLocation);
-			glVertexAttribPointer(scalarsAttribLocation, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 3, (void*)offset);
+			glEnableVertexAttribArray(3);
+			glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 3, (void*)offset);
 			//offset += size;
 		}
 	}

@@ -25,5 +25,5 @@ void RenderPass::resizeBuffer(int width, int height)
 
 void RenderPass::render()
 {
-
+	// Set the shader
 }
