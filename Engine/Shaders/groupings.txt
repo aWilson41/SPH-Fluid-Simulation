@@ -33,9 +33,12 @@ normalColorFS.glsl
 normalTexVS.glsl
 normalTex3FS.glsl
 
-The default layout spec. This is to be able to reuse buffers allocated on the gpu. For example, two different renderers use the same layout and data but different shaders. If the layout wasn't the same we'd need to allocate the buffers twice. This avoids having to make different Mappers for each type of renderer or passing the renderer into the mapper and deciding on which shader to use.
+You must define a shader layout for the mapper, you can do this in the constructor. This just defines how the data is placed on the GPU. One mapper can utilize numerous layouts and switch between them.
 
-To make it extensible I will add a LayoutManager singleton to have a globally agreeable layout. Perhaps in the future I can do some string replacement shaders and modify layout locations per mapper instance.
+The renderer then assigns shaders to use with the mappers given the desired layout. So a (mapper type, layout, renderer type) is mapped to a shader.
+
+For example, the shaders assigned by the standard Renderer are different than those assigned by the PathTraceRenderer. But the layout is the same.
+
 
 Default layout spec:
 Vertex Shaders:
