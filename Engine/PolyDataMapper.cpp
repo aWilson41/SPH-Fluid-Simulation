@@ -3,10 +3,54 @@
 #include "Material.h"
 #include "PolyData.h"
 #include "Renderer.h"
+#include "ReplaceableShader.h"
 #include "Shaders.h"
+
+PolyDataMapper::PolyDataMapper()
+{
+	// Initialize the master shader layout. All the possible structs, uniforms, attributes, etc
+	// Vertex Shader
+	vertexShader = new ReplaceableShader();
+	// Uniforms
+	vertexShader->addUniform("mvpMatrix", "uniform mat4 mvpMatrix;");
+
+	// In vertex attributes
+	vertexShader->addInAttribute("inVPos", "in vec3 inVPos;");
+	vertexShader->addInAttribute("inVColor", "in vec3 inVColor;");
+	vertexShader->addInAttribute("inVNormal", "in vec3 inVNormal;");
+	vertexShader->addInAttribute("inVTexCoord", "in vec2 inVTexCoord;");
+
+	// Out vertex attributes/In fragment attributes
+	vertexShader->addOutAttribute("inFColor", "smooth out vec2 inFTexCoord;");
+	vertexShader->addOutAttribute("inFNormal", "smooth out vec3 inFNormal;");
+	vertexShader->addOutAttribute("inFTexCoord", "smooth out vec3 inFColor;");
+
+
+	// Fragment Shader
+	fragmentShader = new ReplaceableShader();
+	// Structs
+	fragmentShader->addStruct("Material", "struct Material { vec3 diffuseColor; vec3 ambientColor; }");
+
+	// Uniforms
+	fragmentShader->addUniform("mat", "uniform Material mat;");
+	fragmentShader->addUniform("tex", "uniform sample2D tex;");
+	fragmentShader->addUniform("lightDir", "uniform vec3 lightDir;");
+
+	// In fragment attributes
+	fragmentShader->addInAttribute("inFColor", "smooth in vec3 inFColor;");
+	fragmentShader->addInAttribute("inFNormal", "smooth in vec3 inFNormal;");
+	fragmentShader->addInAttribute("inFTexCoord", "smooth in vec2 inFTexCoord;");
+
+	// Out fragment attributes
+	fragmentShader->addOutAttribute("fColor", "out vec4 fColor;");
+}
 
 PolyDataMapper::~PolyDataMapper()
 {
+	if (vertexShader)
+		delete vertexShader;
+	if (fragmentShader)
+		delete fragmentShader;
 	glUseProgram(0);
 	if (vaoID != -1)
 		glDeleteVertexArrays(1, &vaoID);
@@ -117,7 +161,7 @@ void PolyDataMapper::updateInfo()
 	case 1: shaderProgram = Shaders::getShader("Color Shader");
 		break;
 		// No normals, has texCoords, no scalars (010)
-	case 2: shaderProgram = Shaders::getShader("Tex Shader");
+	case 2: shaderProgram = Shaders::getShader("Tex3 Shader");
 		break;
 		// No normals, has texCoords, has scalars (011)
 			//case 3: // There is no shader for this currently. Not that useful

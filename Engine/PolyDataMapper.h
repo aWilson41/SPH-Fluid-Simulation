@@ -5,6 +5,7 @@
 
 class Material;
 class PolyData;
+class ReplaceableShader;
 class ShaderProgram;
 
 // Does rendering and pre rendering operations (mapping input to visual representation)
@@ -12,6 +13,7 @@ class ShaderProgram;
 class PolyDataMapper : public AbstractMapper
 {
 public:
+	PolyDataMapper();
 	~PolyDataMapper();
 
 public:
@@ -61,6 +63,8 @@ protected:
 	GLfloat pointSize = 4.0f;
 
 	ShaderProgram* shaderProgram = nullptr;
+	ReplaceableShader* vertexShader = nullptr;
+	ReplaceableShader* fragmentShader = nullptr;
 
 	// Use normals, scalars, and indices when available
 	// User set values
