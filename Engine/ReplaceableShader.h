@@ -1,178 +1,172 @@
 #pragma once
 #include <list>
 #include <map>
+#include <vector>
 #include <string>
 
-class ReplaceableStringSet
+// Each line in a shader has "dependencies". Things the line requires to be executed.
+// In this way it's like an AST of operations. But I cheat and use whole strings instead to
+// make things easier. This way lines can be reconfigured/swapped on the fly. As well as
+// produce a variation of shaders.
+
+enum NodeType
 {
-public:
-	// returns location it assigned
-	int addReplacementString(std::string attribName, std::string replacementString)
-	{
-		unsigned int location = getUniqueLocation();
-		locations[attribName] = location;
-		replacementStrings[location] = replacementString;// prefix + " " + attribName + ";";
-		status[location] = false;
-		return location;
-	}
-	// Remove by by name
-	void removeReplacementString(std::string attribName)
-	{
-		unsigned int location = locations[attribName];
-		locations.erase(attribName);
-		replacementStrings.erase(location);
-		status.erase(location);
-	}
-	// Remove by location
-	void removeReplacementString(unsigned int location)
-	{
-		// Perform a search (removing doesn't happen that much, otherwise I would define it's inverse)
-		std::string key = "";
-		for (std::map<std::string, unsigned int>::iterator i = locations.begin(); i != locations.end(); i++)
-		{
-			if (location == i->second)
-			{
-				key = i->first;
-				break;
-			}
-		}
-		if (key != "")
-		{
-			locations.erase(key);
-			replacementStrings.erase(location);
-			status.erase(location);
-		}
-	}
-	// Sets whether a current replacement string is active
-	void setReplacementString(unsigned int location, bool active)
-	{
-		// Check if it contains the the attribute to avoid adding it
-		if (status.count(location) == 1)
-			status[location] = active;
-	}
-	// Sets whether a current replacement string is active
-	void setReplacementString(std::string attribName, bool active) { setReplacementString(locations[attribName], active); }
-
-
-	unsigned int getLocation(std::string attribName) { return locations[attribName]; }
-
-private:
-	unsigned int getUniqueLocation()
-	{
-		unsigned int i = 0;
-		bool notFound = true;
-		while (notFound)
-		{
-			if (status.count(i) == 0)
-				notFound = false;
-			else
-				i++;
-		}
-		return i;
-	}
-
-public:
-	// Given a name returns the location (name, location)
-	std::map<std::string, unsigned int> locations;
-	// Given a location gives the string to insert (location, string replacement)
-	std::map<unsigned int, std::string> replacementStrings;
-	// layout location, active status (using or not)
-	std::map<unsigned int, bool> status;
+	NONE = 0, // Invalid
+	INATTRIB = 1,
+	OUTATTRIB = 2,
+	STRUCT = 3,
+	UNIFORM = 4,
+	FUNCTION = 5,
+	OPERATION = 6
 };
 
-// Implements a replaceable shader
-class ReplaceableShader
+// One graph of nodes can represent 1-N shaders. This is also beneficial because nodes are toggleable.
+class ASTNode
 {
 public:
-	//void addFunction(std::string funcName, std::string returnType, std::string funcStr);
-	void setShaderBody(std::string shaderBody) { ReplaceableShader::shaderBody = shaderBody; }
-	// Put before uniforms/attributes/etc. I often use it for structs
-	void setShaderHeader(std::string shaderHeader) { ReplaceableShader::shaderHeader = shaderHeader; }
-
-	// returns location it assigned
-	int addStruct(std::string structName, std::string replacementString) { return structs.addReplacementString(structName, replacementString); }
-	void removeStruct(std::string structName) { structs.removeReplacementString(structName); }
-	void removeStruct(unsigned int location) { structs.removeReplacementString(location); }
-	// Sets whether a current struct is active
-	void setStruct(unsigned int location, bool active) { structs.setReplacementString(location, active); }
-	// Sets whether a current struct is active
-	void setStruct(std::string structName, bool active) { structs.setReplacementString(structName, active); }
-	unsigned int getStructLocation(std::string structName) { return structs.getLocation(structName); }
-
-	// returns location it assigned
-	int addInAttribute(std::string attribName, std::string replacementString) { return inAttributes.addReplacementString(attribName, replacementString); }
-	void removeInAttribute(std::string attribName) { inAttributes.removeReplacementString(attribName); }
-	void removeInAttribute(unsigned int location) { inAttributes.removeReplacementString(location); }
-	// Sets whether a current inAttribute is active
-	void setInAttribute(unsigned int location, bool active) { inAttributes.setReplacementString(location, active); }
-	// Sets whether a current inAttribute is active
-	void setInAttribute(std::string attribName, bool active) { inAttributes.setReplacementString(attribName, active); }
-	unsigned int getInAttributeLocation(std::string attribName) { return inAttributes.getLocation(attribName); }
-
-	// returns location it assigned
-	int addOutAttribute(std::string attribName, std::string replacementString) { return inAttributes.addReplacementString(attribName, replacementString); }
-	void removeOutAttribute(std::string attribName) { inAttributes.removeReplacementString(attribName); }
-	void removeOutAttribute(unsigned int location) { inAttributes.removeReplacementString(location); }
-	// Sets whether a current outAttribute is active
-	void setOutAttribute(unsigned int location, bool active) { inAttributes.setReplacementString(location, active); }
-	// Sets whether a current outAttribute is active
-	void setOutAttribute(std::string attribName, bool active) { inAttributes.setReplacementString(attribName, active); }
-	unsigned int getOutAttributeLocation(std::string attribName) { return inAttributes.getLocation(attribName); }
-
-	// returns location it assigned
-	int addUniform(std::string uniformName, std::string replacementString) { return outAttributes.addReplacementString(uniformName, replacementString); }
-	void removeUniform(std::string uniformName) { outAttributes.removeReplacementString(uniformName); }
-	void removeUniform(unsigned int location) { outAttributes.removeReplacementString(location); }
-	// Sets whether a current uniform is active
-	void setUniform(unsigned int location, bool active) { outAttributes.setReplacementString(location, active); }
-	// Sets whether a current uniform is active
-	void setUniform(std::string uniformName, bool active) { outAttributes.setReplacementString(uniformName, active); }
-	unsigned int getUniformLocation(std::string uniformName) { return outAttributes.getLocation(uniformName); }
-
-	
-	std::string update()
+	ASTNode(NodeType type, std::string str)
 	{
-		shaderStr = "#version 460 core" + shaderHeader + "\n\n";
-		// Add structs
-		for (std::map<unsigned int, std::string>::iterator i = structs.replacementStrings.begin();
-			i != structs.replacementStrings.end(); i++)
-		{
-			shaderStr += i->second + '\n';
-		}
-		shaderStr += '\n';
-		// Add uniforms
-		for (std::map<unsigned int, std::string>::iterator i = uniforms.replacementStrings.begin();
-			i != uniforms.replacementStrings.end(); i++)
-		{
-			shaderStr += "layout(binding = " + std::to_string(i->first) + ") " + i->second + '\n';
-		}
-		shaderStr += '\n';
-		// Add in attribute definitions
-		for (std::map<unsigned int, std::string>::iterator i = inAttributes.replacementStrings.begin();
-			i != inAttributes.replacementStrings.end(); i++)
-		{
-			shaderStr += "layout(location = " + std::to_string(i->first) + ") " + i->second + '\n';
-		}
-		shaderStr += '\n';
-		// Add out attribute definitions
-		for (std::map<unsigned int, std::string>::iterator i = outAttributes.replacementStrings.begin();
-			i != outAttributes.replacementStrings.end(); i++)
-		{
-			shaderStr += i->second + '\n';
-		}
-
-		shaderStr += '\n' + "void main()\n{\n" + shaderBody + "\n}";
-		return shaderStr;
+		ASTNode::type = type;
+		ASTNode::str = str;
 	}
-	std::string getShaderStr() { return shaderStr; }
 
-private:
-	ReplaceableStringSet structs;
-	ReplaceableStringSet uniforms;
-	ReplaceableStringSet inAttributes;
-	ReplaceableStringSet outAttributes;
+	virtual std::string getString() { return str; };
 
-	std::string shaderHeader = "";
-	std::string shaderBody = "";
-	std::string shaderStr = "";
+	void addRequiredNode(ASTNode* node) { requiredNodes.push_back(node); }
+
+public:
+	std::string str = "";
+	bool active = false;
+	NodeType type = NONE;
+
+	std::vector<ASTNode*> requiredNodes; // Needs these nodes before it to execute
+};
+
+class ASTShaderGraph
+{
+public:
+	// Gets all possible shaders
+	std::vector<std::string> getShaderSet();
+
+	void SetNumberInputPorts(unsigned int n)
+	{
+		inputNodes.resize(n);
+	}
+	void AddInputPort(ASTNode* inputNode)
+	{
+		inputNodes.push_back(inputNode);
+	}
+	void AddOutputPort(ASTNode* outputNode)
+	{
+		outputNodes.push_back(outputNode);
+	}
+
+protected:
+	std::vector<ASTNode*> inputNodes;
+	std::vector<ASTNode*> outputNodes;
+};
+
+// Basic vertex + fragment shader graph (assumes output of vec4 color)
+class ShaderProgramGraph : public ASTShaderGraph
+{
+public:
+	ShaderProgramGraph()
+	{
+		ASTNode* outputNode = new ASTNode(NONE, "root");
+		AddOutputPort(outputNode);
+	}
+};
+
+class PolyDataFragmentShaderGraph : public ShaderProgramGraph
+{
+public:
+	PolyDataFragmentShaderGraph()
+	{
+		// Vertex Shader Graph
+
+		// VS Uniforms
+		ASTNode* mvpMatrix_Uniform_VSNode = new ASTNode(UNIFORM, "uniform mat4 mvpMatrix;");
+
+		// VS Input Attributes
+		ASTNode* pos_InAttrib_VSNode = new ASTNode(INATTRIB, "layout(location = 0) in vec3 inVPos;");
+		ASTNode* normal_InAttrib_VSNode = new ASTNode(INATTRIB, "layout(location = 1) in vec3 inVNormal;");
+		ASTNode* texCoord_InAttrib_VSNode = new ASTNode(INATTRIB, "layout(location = 2) in vec2 inVTexCoord;");
+		ASTNode* color_InAttrib_VSNode = new ASTNode(INATTRIB, "layout(location = 3) in vec3 inVColor;");
+
+		// VS Output Attributes
+		ASTNode* normal_OutAttrib_VSNode = new ASTNode(OUTATTRIB, "smooth out vec3 inFNormal;");
+		ASTNode* texCoord_OutAttrib_VSNode = new ASTNode(OUTATTRIB, "smooth out vec2 inFTexCoord;");
+		ASTNode* color_OutAttrib_VSNode = new ASTNode(OUTATTRIB, "smooth out vec3 inFColor;");
+
+		// VS Operations
+		ASTNode* posToWorld_Operation_VSNode = new ASTNode(OPERATION, "gl_Position = mvpMatrix * vec4(inVPos, 1.0);");
+		posToWorld_Operation_VSNode->addRequiredNode(mvpMatrix_Uniform_VSNode);
+		posToWorld_Operation_VSNode->addRequiredNode(pos_InAttrib_VSNode);
+		ASTNode* forwardNormal_Operation_VSNode = new ASTNode(OPERATION, "inFNormal = inVNormal;");
+		forwardNormal_Operation_VSNode->addRequiredNode(normal_InAttrib_VSNode);
+		forwardNormal_Operation_VSNode->addRequiredNode(normal_OutAttrib_VSNode);
+		ASTNode* forwardTexCoord_Operation_VSNode = new ASTNode(OPERATION, "inFTexCoord = inVTexCoord;");
+		forwardTexCoord_Operation_VSNode->addRequiredNode(texCoord_InAttrib_VSNode);
+		forwardTexCoord_Operation_VSNode->addRequiredNode(texCoord_OutAttrib_VSNode);
+		ASTNode* forwardColor_Operation_VSNode = new ASTNode(OPERATION, "inFColor = inVColor;");
+		forwardColor_Operation_VSNode->addRequiredNode(color_InAttrib_VSNode);
+		forwardColor_Operation_VSNode->addRequiredNode(color_OutAttrib_VSNode);
+
+
+		// Fragment Shader Graph
+
+		// FS Structs
+		ASTNode* material_Struct_FSNode = new ASTNode(STRUCT,
+			"struct Material {\n"
+			"	vec3 diffuseColor;\n"
+			"	vec3 ambientColor;\n"
+			"};");
+
+		// FS Uniforms
+		ASTNode* material_Uniform_FSNode = new ASTNode(UNIFORM, "uniform Material mat;");
+		material_Uniform_FSNode->addRequiredNode(material_Struct_FSNode);
+		ASTNode* dirLight_Uniform_FSNode = new ASTNode(UNIFORM, "uniform vec3 lightDir;");
+		ASTNode* tex_Uniform_FSNode = new ASTNode(UNIFORM, "uniform sampler2D tex;");
+
+		// FS Input Attributes
+		ASTNode* normal_InAttrib_FSNode = new ASTNode(INATTRIB, "in vec3 inFNormal;");
+		normal_InAttrib_FSNode->addRequiredNode(forwardNormal_Operation_VSNode);
+		ASTNode* texCoord_InAttrib_FSNode = new ASTNode(INATTRIB, "in vec2 inFTexCoord;");
+		texCoord_InAttrib_FSNode->addRequiredNode(forwardTexCoord_Operation_VSNode);
+		ASTNode* color_InAttrib_FSNode = new ASTNode(INATTRIB, "in vec3 inFColor;");
+		color_InAttrib_FSNode->addRequiredNode(forwardColor_Operation_VSNode);
+
+		// FS Output Attributes
+		ASTNode* color_OutAttrib_FSNode = new ASTNode(OUTATTRIB, "out vec4 outFColor;");
+
+		// FS Operations
+		ASTNode* texColor_Operation_FSNode = new ASTNode(OPERATION, "vec4 texColor = texture2D(tex, inFTexCoord);");
+		texColor_Operation_FSNode->addRequiredNode(tex_Uniform_FSNode);
+		texColor_Operation_FSNode->addRequiredNode(texCoord_InAttrib_FSNode);
+		ASTNode* diffuseRadiance_Operation_FSNode = new ASTNode(OPERATION, "float diffuseRadiance = dot(lightDir, inFNormal);");
+		diffuseRadiance_Operation_FSNode->addRequiredNode(dirLight_Uniform_FSNode);
+		diffuseRadiance_Operation_FSNode->addRequiredNode(normal_InAttrib_FSNode);
+
+		ASTNode* forwardColor_Operation_FSNode = new ASTNode(OPERATION, "fragColor = inFColor;");
+		forwardColor_Operation_FSNode->addRequiredNode(color_OutAttrib_FSNode);
+		forwardColor_Operation_FSNode->addRequiredNode(color_InAttrib_FSNode);
+		ASTNode* ambientColor_Operation_FSNode = new ASTNode(OPERATION, "fragColor = vec4(mat.ambientColor, 1.0f);");
+		ambientColor_Operation_FSNode->addRequiredNode(color_OutAttrib_FSNode);
+		ambientColor_Operation_FSNode->addRequiredNode(material_Struct_FSNode);
+		ASTNode* diffuseAmbient_Operation_FSNode = new ASTNode(OPERATION, "fragColor = clamp(diffuseRadiance * mat.diffuseColor + mat.ambientColor, 0.0f, 1.0f);");
+		diffuseAmbient_Operation_FSNode->addRequiredNode(color_OutAttrib_FSNode);
+		diffuseAmbient_Operation_FSNode->addRequiredNode(diffuseRadiance_Operation_FSNode);
+		diffuseAmbient_Operation_FSNode->addRequiredNode(material_Struct_FSNode);
+		ASTNode* diffuseColor_Operation_FSNode = new ASTNode(OPERATION, "fragColor = clamp(diffuseRadiance * inFColor, 0.0f, 1.0f);");
+		diffuseColor_Operation_FSNode->addRequiredNode(color_OutAttrib_FSNode);
+		diffuseColor_Operation_FSNode->addRequiredNode(diffuseRadiance_Operation_FSNode);
+		diffuseColor_Operation_FSNode->addRequiredNode(color_InAttrib_FSNode);
+		ASTNode* texColor_Operation_FSNode = new ASTNode(OPERATION, "fragColor = texColor;");
+		texColor_Operation_FSNode->addRequiredNode(color_OutAttrib_FSNode);
+		texColor_Operation_FSNode->addRequiredNode(texColor_Operation_FSNode);
+		ASTNode* diffuseTexColor_Operation_FSNode = new ASTNode(OPERATION, "fragColor = clamp(diffuseRadiance * vec3(texColor), 0.0f, 1.0f);");
+		diffuseTexColor_Operation_FSNode->addRequiredNode(color_OutAttrib_FSNode);
+		diffuseTexColor_Operation_FSNode->addRequiredNode(diffuseRadiance_Operation_FSNode);
+		diffuseTexColor_Operation_FSNode->addRequiredNode(texColor_Operation_FSNode);
+	}
 };

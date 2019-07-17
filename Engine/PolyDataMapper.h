@@ -63,8 +63,8 @@ protected:
 	GLfloat pointSize = 4.0f;
 
 	ShaderProgram* shaderProgram = nullptr;
-	ReplaceableShader* vertexShader = nullptr;
-	ReplaceableShader* fragmentShader = nullptr;
+	/*ReplaceableShader* vertexShader = nullptr;
+	ReplaceableShader* fragmentShader = nullptr;*/
 
 	// Use normals, scalars, and indices when available
 	// User set values

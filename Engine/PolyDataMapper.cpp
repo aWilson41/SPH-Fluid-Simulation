@@ -10,47 +10,47 @@ PolyDataMapper::PolyDataMapper()
 {
 	// Initialize the master shader layout. All the possible structs, uniforms, attributes, etc
 	// Vertex Shader
-	vertexShader = new ReplaceableShader();
-	// Uniforms
-	vertexShader->addUniform("mvpMatrix", "uniform mat4 mvpMatrix;");
+	//vertexShader = new ReplaceableShader();
+	//// Uniforms
+	//vertexShader->addUniform("mvpMatrix", "uniform mat4 mvpMatrix;");
 
-	// In vertex attributes
-	vertexShader->addInAttribute("inVPos", "in vec3 inVPos;");
-	vertexShader->addInAttribute("inVColor", "in vec3 inVColor;");
-	vertexShader->addInAttribute("inVNormal", "in vec3 inVNormal;");
-	vertexShader->addInAttribute("inVTexCoord", "in vec2 inVTexCoord;");
+	//// In vertex attributes
+	//vertexShader->addInAttribute("inVPos", "in vec3 inVPos;");
+	//vertexShader->addInAttribute("inVColor", "in vec3 inVColor;");
+	//vertexShader->addInAttribute("inVNormal", "in vec3 inVNormal;");
+	//vertexShader->addInAttribute("inVTexCoord", "in vec2 inVTexCoord;");
 
-	// Out vertex attributes/In fragment attributes
-	vertexShader->addOutAttribute("inFColor", "smooth out vec2 inFTexCoord;");
-	vertexShader->addOutAttribute("inFNormal", "smooth out vec3 inFNormal;");
-	vertexShader->addOutAttribute("inFTexCoord", "smooth out vec3 inFColor;");
+	//// Out vertex attributes/In fragment attributes
+	//vertexShader->addOutAttribute("inFColor", "smooth out vec2 inFTexCoord;");
+	//vertexShader->addOutAttribute("inFNormal", "smooth out vec3 inFNormal;");
+	//vertexShader->addOutAttribute("inFTexCoord", "smooth out vec3 inFColor;");
 
 
-	// Fragment Shader
-	fragmentShader = new ReplaceableShader();
-	// Structs
-	fragmentShader->addStruct("Material", "struct Material { vec3 diffuseColor; vec3 ambientColor; }");
+	//// Fragment Shader
+	//fragmentShader = new ReplaceableShader();
+	//// Structs
+	//fragmentShader->addStruct("Material", "struct Material { vec3 diffuseColor; vec3 ambientColor; }");
 
-	// Uniforms
-	fragmentShader->addUniform("mat", "uniform Material mat;");
-	fragmentShader->addUniform("tex", "uniform sample2D tex;");
-	fragmentShader->addUniform("lightDir", "uniform vec3 lightDir;");
+	//// Uniforms
+	//fragmentShader->addUniform("mat", "uniform Material mat;");
+	//fragmentShader->addUniform("tex", "uniform sample2D tex;");
+	//fragmentShader->addUniform("lightDir", "uniform vec3 lightDir;");
 
-	// In fragment attributes
-	fragmentShader->addInAttribute("inFColor", "smooth in vec3 inFColor;");
-	fragmentShader->addInAttribute("inFNormal", "smooth in vec3 inFNormal;");
-	fragmentShader->addInAttribute("inFTexCoord", "smooth in vec2 inFTexCoord;");
+	//// In fragment attributes
+	//fragmentShader->addInAttribute("inFColor", "smooth in vec3 inFColor;");
+	//fragmentShader->addInAttribute("inFNormal", "smooth in vec3 inFNormal;");
+	//fragmentShader->addInAttribute("inFTexCoord", "smooth in vec2 inFTexCoord;");
 
-	// Out fragment attributes
-	fragmentShader->addOutAttribute("fColor", "out vec4 fColor;");
+	//// Out fragment attributes
+	//fragmentShader->addOutAttribute("fColor", "out vec4 fColor;");
 }
 
 PolyDataMapper::~PolyDataMapper()
 {
-	if (vertexShader)
+	/*if (vertexShader)
 		delete vertexShader;
 	if (fragmentShader)
-		delete fragmentShader;
+		delete fragmentShader;*/
 	glUseProgram(0);
 	if (vaoID != -1)
 		glDeleteVertexArrays(1, &vaoID);

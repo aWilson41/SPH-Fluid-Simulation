@@ -110,6 +110,7 @@ void RenderWindow::createWindow(std::string windowName, int windowWidth, int win
 		glfwTerminate();
 		throw std::runtime_error("Failed to initialize GLEW");
 	}
+	printf("OpenGL version supported: %s\n", glGetString(GL_VERSION));
 }
 
 void RenderWindow::glfwWindowResize(GLFWwindow* window, int width, int height)
