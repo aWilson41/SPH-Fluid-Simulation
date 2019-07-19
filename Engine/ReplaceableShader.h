@@ -3,6 +3,7 @@
 #include <map>
 #include <vector>
 #include <string>
+#include <queue>
 
 // Each line in a shader has "dependencies". Things the line requires to be executed.
 // In this way it's like an AST of operations. But I cheat and use whole strings instead to
@@ -40,29 +41,56 @@ public:
 	NodeType type = NONE;
 
 	std::vector<ASTNode*> requiredNodes; // Needs these nodes before it to execute
+	bool visited = false;
 };
 
 class ASTShaderGraph
 {
 public:
-	// Gets all possible shaders
-	std::vector<std::string> getShaderSet();
-
-	void SetNumberInputPorts(unsigned int n)
-	{
-		inputNodes.resize(n);
-	}
-	void AddInputPort(ASTNode* inputNode)
-	{
-		inputNodes.push_back(inputNode);
-	}
 	void AddOutputPort(ASTNode* outputNode)
 	{
 		outputNodes.push_back(outputNode);
 	}
 
+	std::vector<std::string> getShaderSet()
+	{
+		// Construct the string backwards from the output nodes
+		std::vector<std::string> shaderStrs;
+		for (unsigned int i = 0; i < outputNodes.size(); i++)
+		{
+			// DFS from every outputnode up the graph
+			std::queue<ASTNode*> stack;
+			stack.push(outputNodes[i]);
+			// Maintains the current path for backtracking
+			std::vector<ASTNode*> currPath;
+			while (stack.size() > 0)
+			{
+				ASTNode* node = stack.back();
+				stack.pop();
+				currPath.push_back(node);
+				for (unsigned int j = 0; j < node->requiredNodes.size(); j++)
+				{
+					stack.push(node->requiredNodes[j]);
+				}
+				// If leaf add resulting string to set
+				if (node->requiredNodes.size() == 0)
+					shaderStrs.push_back(nodePathToString(currPath));
+			}
+		}
+		return shaderStrs;
+	}
+
+	std::string nodePathToString(std::vector<ASTNode*> path)
+	{
+		std::string str = "";
+		for (int i = path.size() - 1; i >= 0; i--)
+		{
+			str += path[i]->getString() + '\n';
+		}
+		return str;
+	}
+
 protected:
-	std::vector<ASTNode*> inputNodes;
 	std::vector<ASTNode*> outputNodes;
 };
 
@@ -72,15 +100,15 @@ class ShaderProgramGraph : public ASTShaderGraph
 public:
 	ShaderProgramGraph()
 	{
-		ASTNode* outputNode = new ASTNode(NONE, "root");
-		AddOutputPort(outputNode);
+		/*ASTNode* outputNode = new ASTNode(NONE, "root");
+		AddOutputPort(outputNode);*/
 	}
 };
 
-class PolyDataFragmentShaderGraph : public ShaderProgramGraph
+class PolyDataShaderGraph : public ShaderProgramGraph
 {
 public:
-	PolyDataFragmentShaderGraph()
+	PolyDataShaderGraph()
 	{
 		// Vertex Shader Graph
 
@@ -161,12 +189,20 @@ public:
 		diffuseColor_Operation_FSNode->addRequiredNode(color_OutAttrib_FSNode);
 		diffuseColor_Operation_FSNode->addRequiredNode(diffuseRadiance_Operation_FSNode);
 		diffuseColor_Operation_FSNode->addRequiredNode(color_InAttrib_FSNode);
-		ASTNode* texColor_Operation_FSNode = new ASTNode(OPERATION, "fragColor = texColor;");
-		texColor_Operation_FSNode->addRequiredNode(color_OutAttrib_FSNode);
-		texColor_Operation_FSNode->addRequiredNode(texColor_Operation_FSNode);
+		ASTNode* forwardTexColor_Operation_FSNode = new ASTNode(OPERATION, "fragColor = texColor;");
+		forwardTexColor_Operation_FSNode->addRequiredNode(color_OutAttrib_FSNode);
+		forwardTexColor_Operation_FSNode->addRequiredNode(texColor_Operation_FSNode);
 		ASTNode* diffuseTexColor_Operation_FSNode = new ASTNode(OPERATION, "fragColor = clamp(diffuseRadiance * vec3(texColor), 0.0f, 1.0f);");
 		diffuseTexColor_Operation_FSNode->addRequiredNode(color_OutAttrib_FSNode);
 		diffuseTexColor_Operation_FSNode->addRequiredNode(diffuseRadiance_Operation_FSNode);
 		diffuseTexColor_Operation_FSNode->addRequiredNode(texColor_Operation_FSNode);
+
+		// Final endpoints
+		AddOutputPort(forwardColor_Operation_FSNode);
+		AddOutputPort(ambientColor_Operation_FSNode);
+		AddOutputPort(diffuseAmbient_Operation_FSNode);
+		AddOutputPort(diffuseColor_Operation_FSNode);
+		AddOutputPort(forwardTexColor_Operation_FSNode);
+		AddOutputPort(diffuseTexColor_Operation_FSNode);
 	}
 };
