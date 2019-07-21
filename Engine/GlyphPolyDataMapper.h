@@ -10,6 +10,7 @@
 class GlyphPolyDataMapper : public PolyDataMapper
 {
 public:
+	GlyphPolyDataMapper();
 	~GlyphPolyDataMapper();
 
 public:

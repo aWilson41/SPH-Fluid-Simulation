@@ -5,6 +5,14 @@
 #include "Renderer.h"
 #include "Shaders.h"
 
+GlyphPolyDataMapper::GlyphPolyDataMapper()
+{
+	// Don't inherit parent properties
+	propertyMap.clear();
+	propertyMap.addProperty("Use_Scalars", false);
+	propertyMap.addProperty("Use_Indices", false);
+}
+
 GlyphPolyDataMapper::~GlyphPolyDataMapper()
 {
 	if (offsetData != nullptr)
@@ -23,7 +31,6 @@ void GlyphPolyDataMapper::update()
 
 	// Set the shader to use
 	updateInfo();
-	glUseProgram(shaderProgram->getProgramID());
 
 	// If the vbo haven't been created yet
 	if (vboID == -1)
@@ -83,17 +90,14 @@ void GlyphPolyDataMapper::updateInfo()
 	hasIndices = (polyData->getIndexData() != nullptr && useIndex);
 	hasTexCoords = useTexCoords = false;
 
+	propertyMap.setProperty("Use_VertexColors", hasScalars);
+	propertyMap.setProperty("Use_Indices", hasIndices);
+
 	// Determine size of gpu mem to allocate we assume it has normals and offsets
 	const GLuint numPts = polyData->getPointCount();
 	vboSize = sizeof(GLfloat) * (6 * numPts + instanceCount * 3); // Position and normals + offsets
 	if (hasScalars)
 		vboSize += sizeof(GLfloat) * 3 * instanceCount;
-
-	// The only other option for this shader is color data
-	if (hasScalars)
-		shaderProgram = Shaders::getShader("iNormalColor Shader");
-	else
-		shaderProgram = Shaders::getShader("iNormal Shader");
 }
 void GlyphPolyDataMapper::updateBuffer()
 {
@@ -102,7 +106,6 @@ void GlyphPolyDataMapper::updateBuffer()
 	const GLfloat* vertexData = polyData->getVertexData();
 	const GLfloat* normalData = polyData->getNormalData();
 	const GLfloat* scalarData = colorData;
-	const GLuint shaderID = shaderProgram->getProgramID();
 	const GLint numPts = polyData->getPointCount();
 
 	if (vboID != -1)
@@ -113,7 +116,7 @@ void GlyphPolyDataMapper::updateBuffer()
 		GLint size = sizeof(GLfloat) * 3 * numPts;
 		glBufferSubData(GL_ARRAY_BUFFER, 0, size, vertexData);
 		// Set it's location and access scheme in vao
-		GLuint posAttribLocation = glGetAttribLocation(shaderID, "inPos");
+		GLuint posAttribLocation = 0;// glGetAttribLocation(shaderID, "inPos");
 		glEnableVertexAttribArray(posAttribLocation);
 		glVertexAttribPointer(posAttribLocation, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 3, (void*)0);
 
@@ -122,7 +125,7 @@ void GlyphPolyDataMapper::updateBuffer()
 		size = sizeof(GLfloat) * 3 * numPts;
 		glBufferSubData(GL_ARRAY_BUFFER, offset, size, normalData);
 		// Set it's location and access scheme in vao
-		GLuint normalAttribLocation = glGetAttribLocation(shaderID, "inNormal");
+		GLuint normalAttribLocation = 1;// glGetAttribLocation(shaderID, "inNormal");
 		glEnableVertexAttribArray(normalAttribLocation);
 		glVertexAttribPointer(normalAttribLocation, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 3, (void*)offset);
 
@@ -131,7 +134,7 @@ void GlyphPolyDataMapper::updateBuffer()
 		size = sizeof(GLfloat) * 3 * instanceCount;
 		glBufferSubData(GL_ARRAY_BUFFER, offset, size, offsetData);
 		// Set it's location and access scheme in vao
-		GLuint offsetAttribLocation = glGetAttribLocation(shaderID, "inOffset");
+		GLuint offsetAttribLocation = 2;// glGetAttribLocation(shaderID, "inOffset");
 		glEnableVertexAttribArray(offsetAttribLocation);
 		glVertexAttribPointer(offsetAttribLocation, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 3, (void*)offset);
 		glVertexAttribDivisor(offsetAttribLocation, 1);
@@ -143,7 +146,7 @@ void GlyphPolyDataMapper::updateBuffer()
 			size = sizeof(GLfloat) * 3 * instanceCount;
 			glBufferSubData(GL_ARRAY_BUFFER, offset, size, scalarData);
 			// Set it's location and access scheme in vao
-			GLuint colorAttribLocation = glGetAttribLocation(shaderID, "inColor");
+			GLuint colorAttribLocation = 3;// glGetAttribLocation(shaderID, "inColor");
 			glEnableVertexAttribArray(colorAttribLocation);
 			glVertexAttribPointer(colorAttribLocation, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 3, (void*)offset);
 			glVertexAttribDivisor(colorAttribLocation, 1);
@@ -184,6 +187,9 @@ void GlyphPolyDataMapper::draw(Renderer* ren)
 		glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
 		glPointSize(pointSize);
 	}
+
+	if (shaderProgram == nullptr) // Or current property bits != previous
+		shaderProgram = Shaders::getShader(ren, "GlyphPolyDataMapper", propertyMap.getPropertyBits());
 
 	// If the currently bound shader is diff bind the new one
 	GLuint programId = shaderProgram->getProgramID();

@@ -12,6 +12,7 @@ class ShaderProgram;
 class PolyDataMapper : public AbstractMapper
 {
 public:
+	PolyDataMapper();
 	~PolyDataMapper();
 
 public:
@@ -26,7 +27,7 @@ public:
 	void setShaderProgram(ShaderProgram* shaderProgram)
 	{
 		PolyDataMapper::shaderProgram = shaderProgram;
-		forceShader = true;
+		//forceShader = true;
 	}
 	void setMaterial(Material* material) { PolyDataMapper::material = material; }
 	void setModelMatrix(glm::mat4 model) { PolyDataMapper::model = model; }
@@ -61,6 +62,7 @@ protected:
 	GLfloat pointSize = 4.0f;
 
 	ShaderProgram* shaderProgram = nullptr;
+
 
 	// Use normals, scalars, and indices when available
 	// User set values

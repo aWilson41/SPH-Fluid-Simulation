@@ -1,8 +1,8 @@
 #version 460
 uniform mat4 mvp_matrix;
 
-in vec3 inPos;
-in vec2 inTexCoord;
+layout (location = 0) in vec3 inPos;
+layout (location = 2) in vec2 inTexCoord;
 
 smooth out vec2 texCoord;
 

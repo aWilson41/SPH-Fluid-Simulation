@@ -1,5 +1,6 @@
 #pragma once
 #include "MathHelper.h"
+#include <string>
 
 class Camera;
 class Material;
@@ -31,6 +32,9 @@ public:
 
 	void setCurrentShaderProgram(ShaderProgram* program) { currShaderProgram = program; }
 	void setCamera(Camera* cam) { Renderer::cam = cam; }
+
+	// Returns the shader directory for this particular renderer
+	std::string getShaderDirectory() { return "DirectRasterize/"; };
 
 protected:
 	// Will eventually hold actors instead of mappers

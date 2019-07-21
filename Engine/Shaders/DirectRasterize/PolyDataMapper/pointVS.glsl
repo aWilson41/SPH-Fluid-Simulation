@@ -1,7 +1,7 @@
 #version 460
 uniform mat4 mvp_matrix;
 
-in vec3 inPos;
+layout (location = 0) in vec3 inPos;
 
 void main()
 {

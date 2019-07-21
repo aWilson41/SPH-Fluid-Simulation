@@ -2,6 +2,7 @@
 #include "WindowInteractor.h"
 #include "Renderer.h"
 #include <GLFW/glfw3.h>
+#include <stdexcept>
 
 //#define FULLSCREEN
 static const GLfloat screenRatio = 0.9f;

@@ -129,16 +129,16 @@ void ImageMapper::updateBuffer()
 void ImageMapper::pickShader()
 {
 	// If force shader is on then user of class must set the shader
-	if (forceShader)
-		return;
+	/*if (forceShader)
+		return;*/
 
 	// Shader really only depends on the number of components
-	const GLuint numComps = imageData->getNumComps();
+	/*const GLuint numComps = imageData->getNumComps();
 	if (numComps == 1)
 		shaderProgram = Shaders::getShader("Tex1 Shader");
 	else if (numComps == 3)
 		shaderProgram = Shaders::getShader("Tex3 Shader");
-	else
+	else*/
 		shaderProgram = nullptr;
 }
 

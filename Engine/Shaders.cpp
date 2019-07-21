@@ -1,18 +1,13 @@
 #include "Shaders.h"
+#include "Renderer.h"
 #include <string>
-
-#define LoadShader(shaderName, vsPath, fsPath) \
-	{ ShaderProgram* shader = new ShaderProgram(shaderName); \
-		shader->loadVertexShader(vsPath); \
-		shader->loadFragmentShader(fsPath); \
-		shader->compileProgram(); \
-		shaders.push_back(shader); }
+#include <fstream>
 
 namespace Shaders
 {
-	std::vector<ShaderProgram*> shaders;
+	std::vector<ShaderProgram*> shaderCache;
 
-	ShaderProgram* getShader(std::string name)
+	/*ShaderProgram* getShader(std::string name)
 	{
 		for (unsigned int i = 0; i < shaders.size(); i++)
 		{
@@ -20,31 +15,53 @@ namespace Shaders
 				return shaders[i];
 		}
 		return nullptr;
+	}*/
+
+	ShaderProgram* LoadVSFSShader(std::string shaderName, std::string vsPath, std::string fsPath)
+	{
+		ShaderProgram* shader = new ShaderProgram(shaderName);
+		shader->loadVertexShader(vsPath);
+		shader->loadFragmentShader(fsPath);
+		shader->compileProgram();
+		shaderCache.push_back(shader);
+		return shader;
 	}
 
-	// Initialize some basic shaders
-	void initShaders()
+	ShaderProgram* getShader(Renderer* ren, std::string mapperName, std::bitset<32> propertyKey)//, std::bitset<32> scenePropertyKey)
 	{
-		// Basic Shaders
-		LoadShader("Point Shader", "Shaders/pointVS.glsl", "Shaders/pointFS.glsl");
-		LoadShader("Color Shader", "Shaders/colorVS.glsl", "Shaders/colorFS.glsl");
-		LoadShader("Tex3 Shader", "Shaders/texVS.glsl", "Shaders/tex3FS.glsl");
-		LoadShader("Tex1 Shader", "Shaders/texVS.glsl", "Shaders/tex1FS.glsl");
-		LoadShader("Normal Shader", "Shaders/normalVS.glsl", "Shaders/normalFS.glsl");
-		LoadShader("NormalColor Shader", "Shaders/normalColorVS.glsl", "Shaders/normalColorFS.glsl");
-		LoadShader("NormalTex3 Shader", "Shaders/normalTexVS.glsl", "Shaders/normalTex3FS.glsl");
+		std::string shaderPath = "Shaders/" + ren->getShaderDirectory() + mapperName + '/';
+		// Read the mapping file to find the correct shader
+		//printf("Bitset: %s\n", propertyKey.to_string().c_str());
+		unsigned long lineNum = propertyKey.to_ulong();
+		std::ifstream file;
+		file.open(shaderPath + "mappings.csv");
+		if (file.fail())
+		{
+			printf("Failed to read shader mappings file.\n");
+			return nullptr;
+		}
+		file.seekg(std::ios::beg); // Start from beginning of the file
+		for (unsigned long i = 0; i < lineNum; i++)
+		{
+			file.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+		}
+		std::string vsShaderFileStr, fsShaderFileStr;
+		vsShaderFileStr = fsShaderFileStr = "";
+		std::getline(file, vsShaderFileStr, ',');
+		std::getline(file, fsShaderFileStr, '\n');
+		file.close();
 
-		// Instanced Shaders
-		LoadShader("iNormal Shader", "Shaders/iNormalVS.glsl", "Shaders/normalFS.glsl");
-		LoadShader("iNormalColor Shader", "Shaders/iNormalColorVS.glsl", "Shaders/normalColorFS.glsl");
+		// Eventually this will be replaced with a replaceable shader system that maps the keys directly to the construction of the shader
+		// so there is no required shader database
+		return LoadVSFSShader(ren->getShaderDirectory() + mapperName + propertyKey.to_string(), shaderPath + vsShaderFileStr, shaderPath + fsShaderFileStr);
 	}
 
 	void deleteShaders()
 	{
-		for (unsigned int i = 0; i < shaders.size(); i++)
+		for (unsigned int i = 0; i < shaderCache.size(); i++)
 		{
-			shaders[i]->release();
-			delete shaders[i];
+			shaderCache[i]->release();
+			delete shaderCache[i];
 		}
 	}
 };

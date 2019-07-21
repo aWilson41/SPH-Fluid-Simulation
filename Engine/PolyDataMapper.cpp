@@ -5,6 +5,26 @@
 #include "Renderer.h"
 #include "Shaders.h"
 
+PolyDataMapper::PolyDataMapper()
+{
+	// Create a property map for this mapper
+	// This is so a single unique key (bitset) can be produced to use in branching
+	propertyMap.addProperty("Use_Normals", false);
+	propertyMap.addProperty("Use_TexCoords", false);
+	propertyMap.addProperty("Use_VertexColors", false);
+	propertyMap.addProperty("Use_Indices", false);
+
+	// Ultimately shaders are decided through a combination of (data properties, renderer, scene properties)
+
+	// Shaders aren't known during GPU memory update so standardized layouts and names are used and implemented in shaders
+	// In the future maybe add location assignment in the shader compiler so I don't have to worry about this
+	/*std::map<std::string, unsigned int> layoutLocations;
+	layoutLocations["inPos"] = 0;
+	layoutLocations["inNormal"] = 1;
+	layoutLocations["inTexCoord"] = 2;
+	layoutLocations["inColor"] = 3;*/
+}
+
 PolyDataMapper::~PolyDataMapper()
 {
 	glUseProgram(0);
@@ -23,12 +43,6 @@ void PolyDataMapper::update()
 		return;
 
 	updateInfo();
-	// If no shader was set don't map anything
-	if (shaderProgram == nullptr)
-		return;
-
-	glUseProgram(shaderProgram->getProgramID());
-	const GLuint shaderID = shaderProgram->getProgramID();
 
 	// If the vbo haven't been created yet
 	if (vboID == -1)
@@ -39,7 +53,7 @@ void PolyDataMapper::update()
 		// Gen and allocate space for vbo
 		glGenBuffers(1, &vboID);
 		glBindBuffer(GL_ARRAY_BUFFER, vboID);
-		glBufferData(GL_ARRAY_BUFFER, vboSize, NULL, GL_DYNAMIC_DRAW);	
+		glBufferData(GL_ARRAY_BUFFER, vboSize, NULL, GL_DYNAMIC_DRAW);
 	}
 	// If it has already been created
 	else
@@ -90,6 +104,11 @@ void PolyDataMapper::updateInfo()
 	hasScalars = (polyData->getScalarData() != nullptr && useScalars);
 	hasIndices = (polyData->getIndexData() != nullptr && useIndex);
 
+	propertyMap.setProperty("Use_VertexColors", hasScalars);
+	propertyMap.setProperty("Use_TexCoords", hasTexCoords);
+	propertyMap.setProperty("Use_Normals", hasNormals);
+	propertyMap.setProperty("Use_Indices", hasIndices);
+
 	// Determine size of gpu mem to allocate
 	const GLuint numPts = polyData->getPointCount();
 	vboSize = sizeof(GLfloat) * 3 * numPts; // Position
@@ -99,45 +118,6 @@ void PolyDataMapper::updateInfo()
 		vboSize += sizeof(GLfloat) * 2 * numPts; // Tex coords
 	if (hasScalars)
 		vboSize += sizeof(GLfloat) * 3 * numPts; // Scalars
-
-	// If force shader is on then user of class must set the shader
-	if (forceShader)
-		return;
-
-	// Put each into a separate bit to produce a unique number for each decision
-	UINT flag = static_cast<UINT>(hasScalars) |
-		(static_cast<UINT>(hasTexCoords) * 2) |
-		(static_cast<UINT>(hasNormals) * 4);
-	switch (flag)
-	{
-		// No normals, no texCoords, no scalars (000)
-	case 0: shaderProgram = Shaders::getShader("Point Shader");
-		break;
-		// No normals, no texCoords, has scalars (001)
-	case 1: shaderProgram = Shaders::getShader("Color Shader");
-		break;
-		// No normals, has texCoords, no scalars (010)
-	case 2: shaderProgram = Shaders::getShader("Tex Shader");
-		break;
-		// No normals, has texCoords, has scalars (011)
-			//case 3: // There is no shader for this currently. Not that useful
-			//	break;
-		// Has normals, no texCoords, no scalars (100)
-	case 4: shaderProgram = Shaders::getShader("Normal Shader");
-		break;
-		// Has normals, no texCoords, has scalars (101)
-	case 5: shaderProgram = Shaders::getShader("NormalColor Shader");
-		break;
-		// Has normals, has texCoords, no scalars (110)
-	case 6: shaderProgram = Shaders::getShader("NormalTex Shader");
-		break;
-		// Has normals, has texCoords, has scalars (111)
-			//case 7: // There is no shader for this currently. Not that useful
-			//	break;
-	default:
-		shaderProgram = nullptr;
-		break;
-	};
 }
 void PolyDataMapper::updateBuffer()
 {
@@ -147,7 +127,6 @@ void PolyDataMapper::updateBuffer()
 	const GLfloat* normalData = polyData->getNormalData();
 	const GLfloat* texCoordData = polyData->getTexCoordData();
 	const GLfloat* scalarData = polyData->getScalarData();
-	const GLuint shaderID = shaderProgram->getProgramID();
 	const GLint numPts = polyData->getPointCount();
 
 	if (vboID != -1)
@@ -158,7 +137,7 @@ void PolyDataMapper::updateBuffer()
 		GLint size = sizeof(GLfloat) * 3 * numPts;
 		glBufferSubData(GL_ARRAY_BUFFER, 0, size, vertexData);
 		// Set it's location and access scheme in vao
-		GLuint posAttribLocation = glGetAttribLocation(shaderID, "inPos");
+		GLuint posAttribLocation = 0;// glGetAttribLocation(shaderID, "inPos");
 		glEnableVertexAttribArray(posAttribLocation);
 		glVertexAttribPointer(posAttribLocation, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 3, (void*)0);
 
@@ -170,7 +149,7 @@ void PolyDataMapper::updateBuffer()
 			size = sizeof(GLfloat) * 3 * numPts;
 			glBufferSubData(GL_ARRAY_BUFFER, offset, size, normalData);
 			// Set it's location and access scheme in vao
-			GLuint normalAttribLocation = glGetAttribLocation(shaderID, "inNormal");
+			GLuint normalAttribLocation = 1;// glGetAttribLocation(shaderID, "inNormal");
 			glEnableVertexAttribArray(normalAttribLocation);
 			glVertexAttribPointer(normalAttribLocation, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 3, (void*)offset);
 			offset += size;
@@ -180,7 +159,7 @@ void PolyDataMapper::updateBuffer()
 			size = sizeof(GLfloat) * 2 * numPts;
 			glBufferSubData(GL_ARRAY_BUFFER, offset, size, texCoordData);
 			// Set it's location and access scheme in vao
-			GLuint texCoordAttribLocation = glGetAttribLocation(shaderID, "inTexCoord");
+			GLuint texCoordAttribLocation = 2;// glGetAttribLocation(shaderID, "inTexCoord");
 			glEnableVertexAttribArray(texCoordAttribLocation);
 			glVertexAttribPointer(texCoordAttribLocation, 2, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 2, (void*)offset);
 			offset += size;
@@ -190,7 +169,7 @@ void PolyDataMapper::updateBuffer()
 			size = sizeof(GLfloat) * 3 * numPts;
 			glBufferSubData(GL_ARRAY_BUFFER, offset, size, scalarData);
 			// Set it's location and access scheme in vao
-			GLuint scalarsAttribLocation = glGetAttribLocation(shaderID, "inScalars");
+			GLuint scalarsAttribLocation = 3;// glGetAttribLocation(shaderID, "inScalars");
 			glEnableVertexAttribArray(scalarsAttribLocation);
 			glVertexAttribPointer(scalarsAttribLocation, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 3, (void*)offset);
 			//offset += size;
@@ -218,8 +197,8 @@ void PolyDataMapper::draw(Renderer* ren)
 		return;
 
 	// Save the polygon mode
-	GLint polyMode;
-	glGetIntegerv(GL_POLYGON_MODE, &polyMode);
+	GLint prevPolyMode;
+	glGetIntegerv(GL_POLYGON_MODE, &prevPolyMode);
 
 	// Set the polygon mode needed
 	if (representation == TRIANGLE)
@@ -232,17 +211,20 @@ void PolyDataMapper::draw(Renderer* ren)
 		glPointSize(pointSize);
 	}
 
+	if (shaderProgram == nullptr) // Or current property bits != previous
+		shaderProgram = Shaders::getShader(ren, "PolyDataMapper", propertyMap.getPropertyBits());
+
 	// If the currently bound shader is diff bind the new one
-	GLuint programId = shaderProgram->getProgramID();
-	glUseProgram(programId);
+	GLuint shaderProgramId = shaderProgram->getProgramID();
+	glUseProgram(shaderProgramId);
 
 	// Set the uniforms
 	glm::mat4 mvp = ren->getCamera()->proj * ren->getCamera()->view * model;
 	glm::vec3 tmp = glm::normalize(glm::vec3(0.0f, 1.0f, 1.0f));
-	GLuint lightDirLocation = glGetUniformLocation(programId, "lightDir");
+	GLuint lightDirLocation = glGetUniformLocation(shaderProgramId, "lightDir");
 	if (lightDirLocation != -1)
 		glUniform3fv(lightDirLocation, 1, &tmp[0]);
-	GLuint mvpMatrixLocation = glGetUniformLocation(programId, "mvp_matrix");
+	GLuint mvpMatrixLocation = glGetUniformLocation(shaderProgramId, "mvp_matrix");
 	if (mvpMatrixLocation != -1)
 		glUniformMatrix4fv(mvpMatrixLocation, 1, GL_FALSE, &mvp[0][0]);
 	glm::vec3 diffuse = glm::vec3(0.7f, 0.7f, 0.7f);
@@ -252,10 +234,10 @@ void PolyDataMapper::draw(Renderer* ren)
 		diffuse = material->getDiffuse();
 		ambient = material->getAmbient();
 	}
-	GLuint diffuseColorLocation = glGetUniformLocation(programId, "mat.diffuseColor");
+	GLuint diffuseColorLocation = glGetUniformLocation(shaderProgramId, "mat.diffuseColor");
 	if (diffuseColorLocation != -1)
 		glUniform3fv(diffuseColorLocation, 1, &diffuse[0]);
-	GLuint ambientColorLocation = glGetUniformLocation(programId, "mat.ambientColor");
+	GLuint ambientColorLocation = glGetUniformLocation(shaderProgramId, "mat.ambientColor");
 	if (ambientColorLocation != -1)
 		glUniform3fv(ambientColorLocation, 1, &ambient[0]);
 
@@ -266,6 +248,6 @@ void PolyDataMapper::draw(Renderer* ren)
 		glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(polyData->getPointCount()));
 	glBindVertexArray(0);
 
-	// Set the poly mode back to what it was
-	glPolygonMode(GL_FRONT_AND_BACK, polyMode);
+	// Restore poly mode
+	glPolygonMode(GL_FRONT_AND_BACK, prevPolyMode);
 }
