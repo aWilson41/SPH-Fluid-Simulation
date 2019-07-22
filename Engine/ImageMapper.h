@@ -27,7 +27,6 @@ public:
 
 protected:
 	void updateBuffer();
-	void pickShader();
 
 protected:
 	ImageData* imageData = nullptr;

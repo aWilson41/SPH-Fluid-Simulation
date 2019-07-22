@@ -13,16 +13,6 @@ PolyDataMapper::PolyDataMapper()
 	propertyMap.addProperty("Use_TexCoords", false);
 	propertyMap.addProperty("Use_VertexColors", false);
 	propertyMap.addProperty("Use_Indices", false);
-
-	// Ultimately shaders are decided through a combination of (data properties, renderer, scene properties)
-
-	// Shaders aren't known during GPU memory update so standardized layouts and names are used and implemented in shaders
-	// In the future maybe add location assignment in the shader compiler so I don't have to worry about this
-	/*std::map<std::string, unsigned int> layoutLocations;
-	layoutLocations["inPos"] = 0;
-	layoutLocations["inNormal"] = 1;
-	layoutLocations["inTexCoord"] = 2;
-	layoutLocations["inColor"] = 3;*/
 }
 
 PolyDataMapper::~PolyDataMapper()

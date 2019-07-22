@@ -10,6 +10,10 @@ ImageMapper::ImageMapper()
 {
 	planeSource = new PlaneSource();
 	planeSource->update();
+
+	propertyMap.clear();
+	propertyMap.addProperty("FormatGrayscale", false);
+	propertyMap.addProperty("FormatRGB", false);
 }
 
 ImageMapper::~ImageMapper()
@@ -31,19 +35,26 @@ void ImageMapper::update()
 	if (imageData == nullptr)
 		return;
 
-	pickShader();
-	// If one still wasn't picked then don't update
-	if (shaderProgram == nullptr)
-		return;
-
-	glUseProgram(shaderProgram->getProgramID());
-
 	// Create the plane if it doesn't exist
 	if (planeSource == nullptr)
 	{
 		planeSource = new PlaneSource();
 		planeSource->update();
 	}
+
+	const GLuint numComps = imageData->getNumComps();
+	if (numComps == 1)
+	{
+		propertyMap.setProperty("FormatGrayscale", true);
+		propertyMap.setProperty("FormatRGB", false);
+	}
+	else if (numComps == 3)
+	{
+		propertyMap.setProperty("FormatGrayscale", false);
+		propertyMap.setProperty("FormatRGB", true);
+	}
+	else
+		printf("Error: ImageMapper only supports 1 or 3 components.\n");
 
 	// Transform the plane the image goes on to be in the XY plane and be the size of the image
 	double* bounds = imageData->getBounds();
@@ -69,7 +80,6 @@ void ImageMapper::update()
 		updateBuffer();
 
 	// Setup the texture if it hasn't already been created
-	const GLuint numComps = imageData->getNumComps();
 	GLuint* dim = imageData->getDimensions();
 	if (texID == -1)
 	{
@@ -111,35 +121,19 @@ void ImageMapper::updateBuffer()
 	GLint size1 = sizeof(GLfloat) * 3 * numPts;
 	glBufferSubData(GL_ARRAY_BUFFER, 0, size1, vertexData);
 	// Set it's location and access scheme in vao
-	GLuint posAttribLocation = glGetAttribLocation(shaderID, "inPos");
+	GLuint posAttribLocation = 0;// glGetAttribLocation(shaderID, "inPos");
 	glEnableVertexAttribArray(posAttribLocation);
 	glVertexAttribPointer(posAttribLocation, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 3, (void*)0);
 
 	GLint size2 = sizeof(GLfloat) * 2 * numPts;
 	glBufferSubData(GL_ARRAY_BUFFER, size1, size2, texCoordData);
 	// Set it's location and access scheme in vao
-	GLuint texCoordAttribLocation = glGetAttribLocation(shaderID, "inTexCoord");
+	GLuint texCoordAttribLocation = 2;// glGetAttribLocation(shaderID, "inTexCoord");
 	glEnableVertexAttribArray(texCoordAttribLocation);
 	glVertexAttribPointer(texCoordAttribLocation, 2, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 2, (void*)size1);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
-}
-
-void ImageMapper::pickShader()
-{
-	// If force shader is on then user of class must set the shader
-	/*if (forceShader)
-		return;*/
-
-	// Shader really only depends on the number of components
-	/*const GLuint numComps = imageData->getNumComps();
-	if (numComps == 1)
-		shaderProgram = Shaders::getShader("Tex1 Shader");
-	else if (numComps == 3)
-		shaderProgram = Shaders::getShader("Tex3 Shader");
-	else*/
-		shaderProgram = nullptr;
 }
 
 void ImageMapper::draw(Renderer* ren)
@@ -151,6 +145,8 @@ void ImageMapper::draw(Renderer* ren)
 	GLint polyMode;
 	glGetIntegerv(GL_POLYGON_MODE, &polyMode);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	if (propertyMap.isOutOfDate()) // Or current property bits != previous
+		shaderProgram = Shaders::getShader(ren, "ImageMapper", propertyMap.getPropertyBits());
 	glUseProgram(shaderProgram->getProgramID());
 
 	glm::mat4 mvp = ren->getCamera()->proj * ren->getCamera()->view * model * imageSizeMat;
