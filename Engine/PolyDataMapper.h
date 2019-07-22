@@ -63,7 +63,6 @@ protected:
 
 	ShaderProgram* shaderProgram = nullptr;
 
-
 	// Use normals, scalars, and indices when available
 	// User set values
 	bool useNormals = true;

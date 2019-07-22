@@ -5,9 +5,8 @@
 #include <stdexcept>
 
 //#define FULLSCREEN
-static const GLfloat screenRatio = 0.9f;
 
-RenderWindow::RenderWindow()
+RenderWindow::RenderWindow(std::string windowName, int x, int y, int width, int height, bool fullscreen)
 {
 	glfwSetErrorCallback(glfwErrorCallback);
 
@@ -22,12 +21,7 @@ RenderWindow::RenderWindow()
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 	//glfwWindowHint(GLFW_VISIBLE, GL_FALSE);
 
-	const GLFWvidmode* vidMode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-#ifdef FULLSCREEN
-	createWindow(windowName, static_cast<int>(vidMode->width), static_cast<int>(vidMode->height));
-#else
-	createWindow(windowName, static_cast<int>(vidMode->width * screenRatio), static_cast<int>(vidMode->height * screenRatio));
-#endif
+	createWindow(windowName, x, y, width, height, fullscreen);
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_DEPTH_CLAMP);
@@ -63,6 +57,16 @@ void RenderWindow::render()
 
 bool RenderWindow::isActive() { return !glfwWindowShouldClose(window); }
 
+void RenderWindow::setRenderer(Renderer* ren)
+{
+	RenderWindow::ren = ren;
+	// Get the default framebuffers new size
+	int frameBufferWidth, frameBufferHeight;
+	glfwGetFramebufferSize(window, &frameBufferWidth, &frameBufferHeight);
+	// Initialize renderer to the same size framebuffer as the windows default
+	ren->resizeFramebuffer(frameBufferWidth, frameBufferHeight);
+}
+
 void RenderWindow::setWindowName(std::string name)
 {
 	windowName = name;
@@ -80,13 +84,46 @@ void RenderWindow::setInteractor(WindowInteractor* interactor)
 	interactor->init(glm::vec2(posX, posY), width, height);
 }
 
-void RenderWindow::createWindow(std::string windowName, int windowWidth, int windowHeight)
+int RenderWindow::getWindowWidth()
 {
-#ifdef FULLSCREEN
-	window = glfwCreateWindow(windowWidth, windowHeight, windowName.c_str(), glfwGetPrimaryMonitor(), nullptr);
-#else
-	window = glfwCreateWindow(windowWidth, windowHeight, windowName.c_str(), nullptr, nullptr);
-#endif
+	int width, height;
+	glfwGetWindowSize(window, &width, &height);
+	return width;
+}
+int RenderWindow::getWindowHeight()
+{
+	int width, height;
+	glfwGetWindowSize(window, &width, &height);
+	return height;
+}
+int RenderWindow::getFramebufferWidth()
+{
+	int width, height;
+	glfwGetFramebufferSize(window, &width, &height);
+	return width;
+}
+int RenderWindow::getFramebufferHeight()
+{
+	int width, height;
+	glfwGetFramebufferSize(window, &width, &height);
+	return height;
+}
+
+void RenderWindow::createWindow(std::string windowName, int x, int y, int windowWidth, int windowHeight, bool fullscreen)
+{
+	const GLFWvidmode* vidMode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+	if (windowWidth == -1)
+		windowWidth = vidMode->width * 0.75;
+	if (windowHeight == -1)
+		windowHeight = vidMode->height * 0.75;
+	if (x == -1)
+		x = vidMode->width * 0.25 * 0.5;
+	if (y == -1)
+		y = vidMode->height * 0.25 * 0.5;
+	if (fullscreen)
+		window = glfwCreateWindow(static_cast<int>(vidMode->width), static_cast<int>(vidMode->height), windowName.c_str(), glfwGetPrimaryMonitor(), nullptr);
+	else
+		window = glfwCreateWindow(windowWidth, windowHeight, windowName.c_str(), nullptr, nullptr);
 
 	if (!window)
 	{
@@ -95,6 +132,7 @@ void RenderWindow::createWindow(std::string windowName, int windowWidth, int win
 	}
 
 	glfwMakeContextCurrent(window);
+	glfwSetWindowPos(window, x, y);
 	glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
 	glfwSetWindowSizeCallback(window, glfwWindowResize);
 	glfwSetCursorPosCallback(window, glfwMouseMove);
@@ -115,7 +153,16 @@ void RenderWindow::createWindow(std::string windowName, int windowWidth, int win
 void RenderWindow::glfwWindowResize(GLFWwindow* window, int width, int height)
 {
 	RenderWindow* renWin = static_cast<RenderWindow*>(glfwGetWindowUserPointer(window));
-	renWin->getInteractor()->windowResize(width, height);
+	renWin->glfwWindowResize(width, height);
+}
+void RenderWindow::glfwWindowResize(int width, int height)
+{
+	interactor->windowResize(width, height);
+	// Get the default framebuffers new size
+	int frameBufferWidth, frameBufferHeight;
+	glfwGetFramebufferSize(window, &frameBufferWidth, &frameBufferHeight);
+	// Make sure the renderer is updated, in case it uses a different framebuffer
+	ren->resizeFramebuffer(frameBufferWidth, frameBufferHeight);
 }
 
 void RenderWindow::glfwMouseMove(GLFWwindow* window, double posX, double posY)

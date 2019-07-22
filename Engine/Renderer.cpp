@@ -3,8 +3,6 @@
 #include "Shaders.h"
 #include "Material.h"
 
-Renderer::Renderer() { }
-
 Renderer::~Renderer()
 {
 	Shaders::deleteShaders();

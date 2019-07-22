@@ -26,7 +26,7 @@ public:
 
 	void setProperty(std::string key, bool state)
 	{
-		if (!outOfDate && propertyBits[indexMap[key]] != state);
+		if (!outOfDate && propertyBits[indexMap[key]] != state)
 			outOfDate = true;
 		propertyBits.set(indexMap[key], state);
 	}

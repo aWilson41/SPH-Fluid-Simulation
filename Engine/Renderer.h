@@ -11,11 +11,12 @@ class ShaderProgram;
 class Renderer
 {
 public:
-	Renderer();
 	~Renderer();
 
 public:
-	void render();
+	virtual void render();
+	// The direct renderer uses the default framebuffer
+	virtual void resizeFramebuffer(int width, int height) { }
 
 	// Might split mapper into actor where this becomes addActor
 	void addRenderItem(AbstractMapper* mapper) { mappers.push_back(mapper); }
@@ -34,7 +35,7 @@ public:
 	void setCamera(Camera* cam) { Renderer::cam = cam; }
 
 	// Returns the shader directory for this particular renderer
-	std::string getShaderDirectory() { return "DirectRasterize/"; };
+	virtual std::string getShaderDirectory() { return "DirectRasterize/"; };
 
 protected:
 	// Will eventually hold actors instead of mappers

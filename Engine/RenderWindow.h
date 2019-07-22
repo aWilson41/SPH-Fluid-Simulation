@@ -9,7 +9,11 @@ class Renderer;
 class RenderWindow
 {
 public:
-	RenderWindow();
+	// Negative defaults tell it to use defaults based on screen
+	RenderWindow(std::string windowName,
+		int x = -1, int y = -1,
+		int width = -1, int height = -1,
+		bool fullscreen = false);
 	~RenderWindow() { stop(); }
 
 public:
@@ -18,13 +22,20 @@ public:
 	void render();
 	bool isActive();
 
-	void setRenderer(Renderer* ren) { RenderWindow::ren = ren; }
+	void setRenderer(Renderer* ren);
 	void setWindowName(std::string name);
 	void setInteractor(WindowInteractor* interactor);
 	WindowInteractor* getInteractor() { return interactor; }
 
+	void glfwWindowResize(int width, int height);
+
+	int getWindowWidth();
+	int getWindowHeight();
+	int getFramebufferWidth();
+	int getFramebufferHeight();
+
 protected:
-	void createWindow(std::string windowName, int windowWidth, int windowHeight);
+	void createWindow(std::string windowName, int x, int y, int windowWidth, int windowHeight, bool fullscreen = false);
 
 	// GLFW callback
 	static void glfwErrorCallback(int error, const char * description)
