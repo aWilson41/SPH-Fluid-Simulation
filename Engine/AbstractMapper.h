@@ -10,7 +10,10 @@ template<size_t T>
 class PropertyMap
 {
 public:
-	std::bitset<T> getPropertyBits() { return propertyBits; }
+	std::bitset<T> getPropertyBits()
+	{
+		return propertyBits;
+	}
 
 	// Returns assigned index in bitset
 	size_t addProperty(std::string key, bool initialState = false)
@@ -23,8 +26,13 @@ public:
 
 	void setProperty(std::string key, bool state)
 	{
+		if (!outOfDate && propertyBits[indexMap[key]] != state);
+			outOfDate = true;
 		propertyBits.set(indexMap[key], state);
 	}
+
+	void makeCurrent() { outOfDate = false; }
+	bool isOutOfDate() { return outOfDate; }
 
 	void clear()
 	{
@@ -37,6 +45,8 @@ private:
 	std::bitset<T> propertyBits;
 	std::map<std::string, size_t> indexMap;
 	int incrementalKey = 0;
+	bool outOfDate = true;
+
 };
 
 class AbstractMapper

@@ -211,7 +211,7 @@ void PolyDataMapper::draw(Renderer* ren)
 		glPointSize(pointSize);
 	}
 
-	if (shaderProgram == nullptr) // Or current property bits != previous
+	if (propertyMap.isOutOfDate())
 		shaderProgram = Shaders::getShader(ren, "PolyDataMapper", propertyMap.getPropertyBits());
 
 	// If the currently bound shader is diff bind the new one

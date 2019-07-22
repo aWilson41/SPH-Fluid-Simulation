@@ -188,7 +188,7 @@ void GlyphPolyDataMapper::draw(Renderer* ren)
 		glPointSize(pointSize);
 	}
 
-	if (shaderProgram == nullptr) // Or current property bits != previous
+	if (propertyMap.isOutOfDate()) // Or current property bits != previous
 		shaderProgram = Shaders::getShader(ren, "GlyphPolyDataMapper", propertyMap.getPropertyBits());
 
 	// If the currently bound shader is diff bind the new one
