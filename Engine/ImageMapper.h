@@ -1,6 +1,5 @@
 #pragma once
 #include "AbstractMapper.h"
-#include "MathHelper.h"
 
 class ImageData;
 class PlaneSource;
@@ -23,7 +22,11 @@ public:
 	// Updates the buffers to match the input data
 	void update() override;
 
+	void use(Renderer* ren) override;
+
 	void draw(Renderer* ren) override;
+
+	GLuint getShaderProgramID() override;
 
 protected:
 	void updateBuffer();

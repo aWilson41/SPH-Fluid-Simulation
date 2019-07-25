@@ -1,10 +1,11 @@
 #pragma once
 #include "MathHelper.h"
+#include "PropertyMap.h"
 #include <string>
 
-class Camera;
-class Material;
 class AbstractMapper;
+class Camera;
+class PhongMaterial;
 class ShaderProgram;
 
 // Does the rendering, mostly just managing the scene (there is no scene object)
@@ -20,11 +21,11 @@ public:
 
 	// Might split mapper into actor where this becomes addActor
 	void addRenderItem(AbstractMapper* mapper) { mappers.push_back(mapper); }
-	void addMaterial(Material material);
+	void addMaterial(PhongMaterial material);
 
 	bool containsRenderItem(AbstractMapper* mapper);
 
-	Material* getMaterial(UINT i) { return materials[i]; }
+	PhongMaterial* getMaterial(UINT i) { return materials[i]; }
 	AbstractMapper* getRenderItem(UINT i) { return mappers[i]; }
 
 	// Returns the currently bound shader
@@ -40,8 +41,11 @@ public:
 protected:
 	// Will eventually hold actors instead of mappers
 	std::vector<AbstractMapper*> mappers;
-	std::vector<Material*> materials;
+	std::vector<PhongMaterial*> materials;
 	Camera* cam = nullptr;
 	ShaderProgram* currShaderProgram = nullptr;
 	bool initialized = false;
+
+	PropertyMap<32> sceneProperties;
+	glm::vec3 lightDir = glm::vec3(0.0f, 1.0f, 1.0f); // Temporarily only supporting a single directional light
 };

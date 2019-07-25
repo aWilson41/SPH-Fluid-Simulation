@@ -1,6 +1,5 @@
 #pragma once
 #include "PolyDataMapper.h"
-#include "MathHelper.h"
 #include "Types.h"
 
 // Does rendering and pre rendering operations (mapping input to visual representation)
@@ -38,7 +37,11 @@ public:
 	// Updates the buffer based on the set poly data. If it's the first time it initializes the buffer
 	void update() override;
 
+	void use(Renderer* ren) override;
+
 	void draw(Renderer* ren) override;
+
+	GLuint getShaderProgramID() override;
 
 protected:
 	void updateInfo();

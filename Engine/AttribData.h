@@ -21,5 +21,9 @@ public:
 	}
 
 public:
-	void* attrib[8];
+	void* attrib[8] = { 
+		nullptr, nullptr, 
+		nullptr, nullptr,
+		nullptr, nullptr,
+		nullptr, nullptr };
 };

@@ -1,6 +1,6 @@
 #include "GlyphPolyDataMapper.h"
 #include "Camera.h"
-#include "Material.h"
+#include "PhongMaterial.h"
 #include "PolyData.h"
 #include "Renderer.h"
 #include "Shaders.h"
@@ -8,9 +8,9 @@
 GlyphPolyDataMapper::GlyphPolyDataMapper()
 {
 	// Don't inherit parent properties
-	propertyMap.clear();
-	propertyMap.addProperty("Use_Scalars", false);
-	propertyMap.addProperty("Use_Indices", false);
+	objectProperties->clear();
+	objectProperties->addProperty("Use_Scalars", false);
+	objectProperties->addProperty("Use_Indices", false);
 }
 
 GlyphPolyDataMapper::~GlyphPolyDataMapper()
@@ -18,6 +18,8 @@ GlyphPolyDataMapper::~GlyphPolyDataMapper()
 	if (offsetData != nullptr)
 		delete[] offsetData;
 }
+
+GLuint GlyphPolyDataMapper::getShaderProgramID() { return shaderProgram->getProgramID(); }
 
 void GlyphPolyDataMapper::update()
 {
@@ -90,8 +92,8 @@ void GlyphPolyDataMapper::updateInfo()
 	hasIndices = (polyData->getIndexData() != nullptr && useIndex);
 	hasTexCoords = useTexCoords = false;
 
-	propertyMap.setProperty("Use_VertexColors", hasScalars);
-	propertyMap.setProperty("Use_Indices", hasIndices);
+	objectProperties->setProperty("Use_VertexColors", hasScalars);
+	objectProperties->setProperty("Use_Indices", hasIndices);
 
 	// Determine size of gpu mem to allocate we assume it has normals and offsets
 	const GLuint numPts = polyData->getPointCount();
@@ -118,7 +120,7 @@ void GlyphPolyDataMapper::updateBuffer()
 		// Set it's location and access scheme in vao
 		GLuint posAttribLocation = 0;// glGetAttribLocation(shaderID, "inPos");
 		glEnableVertexAttribArray(posAttribLocation);
-		glVertexAttribPointer(posAttribLocation, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 3, (void*)0);
+		glVertexAttribPointer(posAttribLocation, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 3, (void*)(uintptr_t)0);
 
 		GLint offset = size;
 
@@ -127,7 +129,7 @@ void GlyphPolyDataMapper::updateBuffer()
 		// Set it's location and access scheme in vao
 		GLuint normalAttribLocation = 1;// glGetAttribLocation(shaderID, "inNormal");
 		glEnableVertexAttribArray(normalAttribLocation);
-		glVertexAttribPointer(normalAttribLocation, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 3, (void*)offset);
+		glVertexAttribPointer(normalAttribLocation, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 3, (void*)(uintptr_t)offset);
 
 		offset += size;
 
@@ -136,7 +138,7 @@ void GlyphPolyDataMapper::updateBuffer()
 		// Set it's location and access scheme in vao
 		GLuint offsetAttribLocation = 2;// glGetAttribLocation(shaderID, "inOffset");
 		glEnableVertexAttribArray(offsetAttribLocation);
-		glVertexAttribPointer(offsetAttribLocation, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 3, (void*)offset);
+		glVertexAttribPointer(offsetAttribLocation, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 3, (void*)(uintptr_t)offset);
 		glVertexAttribDivisor(offsetAttribLocation, 1);
 
 		offset += size;
@@ -148,7 +150,7 @@ void GlyphPolyDataMapper::updateBuffer()
 			// Set it's location and access scheme in vao
 			GLuint colorAttribLocation = 3;// glGetAttribLocation(shaderID, "inColor");
 			glEnableVertexAttribArray(colorAttribLocation);
-			glVertexAttribPointer(colorAttribLocation, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 3, (void*)offset);
+			glVertexAttribPointer(colorAttribLocation, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 3, (void*)(uintptr_t)offset);
 			glVertexAttribDivisor(colorAttribLocation, 1);
 		}
 	}
@@ -166,6 +168,17 @@ void GlyphPolyDataMapper::updateBuffer()
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+}
+
+void GlyphPolyDataMapper::use(Renderer* ren)
+{
+	if (polyData == nullptr || vaoID == -1)
+		return;
+
+	if (objectProperties->isOutOfDate())
+		shaderProgram = Shaders::getShader(ren, "GlyphPolyDataMapper", objectProperties->getPropertyBits());
+
+	glUseProgram(shaderProgram->getProgramID());
 }
 
 void GlyphPolyDataMapper::draw(Renderer* ren)
@@ -188,19 +201,9 @@ void GlyphPolyDataMapper::draw(Renderer* ren)
 		glPointSize(pointSize);
 	}
 
-	if (propertyMap.isOutOfDate()) // Or current property bits != previous
-		shaderProgram = Shaders::getShader(ren, "GlyphPolyDataMapper", propertyMap.getPropertyBits());
-
-	// If the currently bound shader is diff bind the new one
-	GLuint programId = shaderProgram->getProgramID();
-	glUseProgram(programId);
-
 	// Set the uniforms
+	GLuint programId = shaderProgram->getProgramID();
 	glm::mat4 mvp = ren->getCamera()->proj * ren->getCamera()->view * model;
-	glm::vec3 tmp = glm::normalize(glm::vec3(0.0f, 1.0f, 1.0f));
-	GLuint lightDirLocation = glGetUniformLocation(programId, "lightDir");
-	if (lightDirLocation != -1)
-		glUniform3fv(lightDirLocation, 1, &tmp[0]);
 	GLuint mvpMatrixLocation = glGetUniformLocation(programId, "mvp_matrix");
 	if (mvpMatrixLocation != -1)
 		glUniformMatrix4fv(mvpMatrixLocation, 1, GL_FALSE, &mvp[0][0]);
@@ -220,7 +223,7 @@ void GlyphPolyDataMapper::draw(Renderer* ren)
 
 	glBindVertexArray(vaoID);
 	if (polyData->getIndexData() != nullptr && useIndex)
-		glDrawElementsInstanced(GL_TRIANGLES, polyData->getIndexCount(), GL_UNSIGNED_INT, (void*)0, instanceCount);
+		glDrawElementsInstanced(GL_TRIANGLES, polyData->getIndexCount(), GL_UNSIGNED_INT, (void*)(uintptr_t)0, instanceCount);
 	else
 		glDrawArraysInstanced(GL_TRIANGLES, 0, static_cast<GLsizei>(polyData->getPointCount()), instanceCount);
 	glBindVertexArray(0);

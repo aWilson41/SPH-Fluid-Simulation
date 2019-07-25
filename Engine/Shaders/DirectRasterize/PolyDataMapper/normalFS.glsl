@@ -1,19 +1,24 @@
 #version 460
-struct Material
+
+struct PhongMaterial
 {
 	vec3 diffuseColor;
+	vec4 specularColor;
 	vec3 ambientColor;
 };
 
-uniform Material mat;
+uniform PhongMaterial mat;
 uniform vec3 lightDir;
 
 smooth in vec3 normal;
-
 out vec4 fColor;
 
 void main()
 {
-	vec3 color = clamp(dot(lightDir, normal) * mat.diffuseColor + mat.ambientColor, 0.0f, 1.0f);
-	fColor = vec4(color, 1.0f);
+	float diffuse = clamp(dot(lightDir, normal), 0.0f, 1.0f);
+
+	vec3 diffuseColor = diffuse * mat.diffuseColor;
+	vec3 ambientColor = mat.ambientColor;
+
+	fColor = vec4(diffuse * diffuseColor + ambientColor, 1.0f);
 }

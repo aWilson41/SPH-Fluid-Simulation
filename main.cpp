@@ -1,5 +1,5 @@
 #include "Engine/GlyphPolyDataMapper.h"
-#include "Engine/Material.h"
+#include "Engine/PhongMaterial.h"
 #include "Engine/PlaneSource.h"
 #include "Engine/Renderer.h"
 #include "Engine/RenderWindow.h"
@@ -21,9 +21,9 @@ int main(int argc, char *argv[])
 	// Create the renderer
 	Renderer ren;
 	ren.setCamera(&cam);
-	ren.addMaterial(Material(glm::vec3(0.2f, 0.4f, 0.2f), 0.5f));
-	ren.addMaterial(Material(glm::vec3(0.2f, 0.2f, 0.2f), 0.5f));
-	ren.addMaterial(Material(glm::vec3(0.0f, 0.0f, 0.2f), 0.5f));
+	ren.addMaterial(PhongMaterial(glm::vec3(0.2f, 0.4f, 0.2f), 0.5f));
+	ren.addMaterial(PhongMaterial(glm::vec3(0.2f, 0.2f, 0.2f), 0.5f));
+	ren.addMaterial(PhongMaterial(glm::vec3(0.0f, 0.0f, 0.2f), 0.5f));
 	renWindow.setRenderer(&ren);
 
 	// Setup the camera interactor (maps user window input to camera)

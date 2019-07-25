@@ -1,7 +1,7 @@
 #include "Renderer.h"
-#include "PolyDataMapper.h"
+#include "AbstractMapper.h"
+#include "PhongMaterial.h"
 #include "Shaders.h"
-#include "Material.h"
 
 Renderer::~Renderer()
 {
@@ -13,7 +13,7 @@ Renderer::~Renderer()
 	}
 }
 
-void Renderer::addMaterial(Material material) { materials.push_back(new Material(material)); }
+void Renderer::addMaterial(PhongMaterial material) { materials.push_back(new PhongMaterial(material)); }
 
 bool Renderer::containsRenderItem(AbstractMapper* mapper)
 {
@@ -29,6 +29,14 @@ void Renderer::render()
 {
 	for (UINT i = 0; i < mappers.size(); i++)
 	{
-		mappers[i]->draw(this);
+		AbstractMapper* mapper = mappers[i];
+		mapper->use(this);
+
+		// Set the scene uniforms
+		GLuint lightDirLocation = glGetUniformLocation(mapper->getShaderProgramID(), "lightDir");
+		if (lightDirLocation != -1)
+			glUniform3fv(lightDirLocation, 1, &lightDir[0]);
+
+		mapper->draw(this);
 	}
 }

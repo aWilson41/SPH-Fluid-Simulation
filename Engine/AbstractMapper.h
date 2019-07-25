@@ -1,62 +1,60 @@
 #pragma once
-#include <bitset>
-#include <map>
+#include "MathHelper.h"
+#include "PropertyMap.h"
 
 class Renderer;
 
-// A map of properties implemented as a bitset for use as a unique key
-// Good way to do branching based off properties
-template<size_t T>
-class PropertyMap
+class ShaderProperties
 {
 public:
-	std::bitset<T> getPropertyBits()
+	// Updates the property combining all the properties to produce a unique 64bit value
+	unsigned long long update()
 	{
-		return propertyBits;
+		// To quickly compile these bitset we add them
+		key = std::bitset<64>(
+			objectProperties.getPropertyBits().to_string() + 
+			sceneProperties.getPropertyBits().to_string() + 
+			renderProperties.getPropertyBits().to_string());
+		keyLong = key.to_ullong();
+		return keyLong;
 	}
 
-	// Returns assigned index in bitset
-	size_t addProperty(std::string key, bool initialState = false)
-	{
-		indexMap[key] = incrementalKey;
-		propertyBits.set(incrementalKey, initialState);
-		incrementalKey++;
-		return incrementalKey - 1;
-	}
+	PropertyMap<32>* getObjectProperties() { return &objectProperties; }
+	PropertyMap<16>* getSceneProperties() { return &sceneProperties; }
+	PropertyMap<16>* getRenderProperties() { return &renderProperties; }
+	unsigned long long getKey() { return keyLong; }
 
-	void setProperty(std::string key, bool state)
-	{
-		if (!outOfDate && propertyBits[indexMap[key]] != state)
-			outOfDate = true;
-		propertyBits.set(indexMap[key], state);
-	}
+	void setObjectProperties(PropertyMap<32> objectProperties) { ShaderProperties::objectProperties = objectProperties; }
+	void setSceneProperties(PropertyMap<16> sceneProperties) { ShaderProperties::sceneProperties = sceneProperties; }
+	void setRenderProperties(PropertyMap<16> renderProperties) { ShaderProperties::renderProperties = renderProperties; }
 
-	void makeCurrent() { outOfDate = false; }
-	bool isOutOfDate() { return outOfDate; }
+protected:
+	PropertyMap<32> objectProperties;
+	PropertyMap<16> sceneProperties;
+	PropertyMap<16> renderProperties;
 
-	void clear()
-	{
-		propertyBits.reset();
-		indexMap.clear();
-		incrementalKey = 0;
-	}
-
-private:
-	std::bitset<T> propertyBits;
-	std::map<std::string, size_t> indexMap;
-	int incrementalKey = 0;
-	bool outOfDate = true;
-
+	std::bitset<64> key;
+	unsigned long long keyLong = 0;
 };
 
 class AbstractMapper
 {
 public:
+	AbstractMapper()
+	{
+		objectProperties = properties.getObjectProperties();
+	}
+
+	virtual GLuint getShaderProgramID() = 0;
+
 	virtual void update() = 0;
 
-	virtual void draw(Renderer * ren) = 0;
+	// Binds the shader program
+	virtual void use(Renderer* ren) = 0;
+
+	virtual void draw(Renderer* ren) = 0;
 
 protected:
-	// Holds properties in a bitset + map
-	PropertyMap<32> propertyMap;
+	PropertyMap<32>* objectProperties = nullptr;
+	ShaderProperties properties;
 };

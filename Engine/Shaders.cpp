@@ -1,7 +1,8 @@
 #include "Shaders.h"
+#include "AbstractMapper.h"
 #include "Renderer.h"
-#include <string>
 #include <fstream>
+#include <string>
 
 namespace Shaders
 {
@@ -17,6 +18,7 @@ namespace Shaders
 		return nullptr;
 	}*/
 
+	// Load shader program from source
 	ShaderProgram* LoadVSFSShader(std::string shaderName, std::string vsPath, std::string fsPath)
 	{
 		ShaderProgram* shader = new ShaderProgram(shaderName);
@@ -27,12 +29,22 @@ namespace Shaders
 		return shader;
 	}
 
-	ShaderProgram* getShader(Renderer* ren, std::string mapperName, std::bitset<32> propertyKey)//, std::bitset<32> scenePropertyKey)
+	// Construct Shader from its properties
+	/*void LoadVSFSShader(ShaderProgram* shaderProgram)
 	{
+		if (shaderProgram == nullptr)
+			return;
+	}*/
+
+	ShaderProgram* getShader(Renderer* ren, std::string mapperName, ShaderProperties* properties)
+	{
+		if (ren == nullptr || properties == nullptr)
+			return nullptr;
+
 		std::string shaderPath = "Shaders/" + ren->getShaderDirectory() + mapperName + '/';
 		// Read the mapping file to find the correct shader
 		//printf("Bitset: %s\n", propertyKey.to_string().c_str());
-		unsigned long lineNum = propertyKey.to_ulong();
+		unsigned long long lineNum = properties->getKey();
 		std::ifstream file;
 		file.open(shaderPath + "mappings.csv");
 		if (file.fail())
@@ -53,7 +65,8 @@ namespace Shaders
 
 		// Eventually this will be replaced with a replaceable shader system that maps the keys directly to the construction of the shader
 		// so there is no required shader database
-		return LoadVSFSShader(ren->getShaderDirectory() + mapperName + propertyKey.to_string(), shaderPath + vsShaderFileStr, shaderPath + fsShaderFileStr);
+		return LoadVSFSShader("unnamed", shaderPath + vsShaderFileStr, shaderPath + fsShaderFileStr);
+		return nullptr;
 	}
 
 	void deleteShaders()

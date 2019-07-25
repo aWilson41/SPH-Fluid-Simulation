@@ -113,13 +113,13 @@ void RenderWindow::createWindow(std::string windowName, int x, int y, int window
 {
 	const GLFWvidmode* vidMode = glfwGetVideoMode(glfwGetPrimaryMonitor());
 	if (windowWidth == -1)
-		windowWidth = vidMode->width * 0.75;
+		windowWidth = static_cast<int>(vidMode->width * 0.75);
 	if (windowHeight == -1)
-		windowHeight = vidMode->height * 0.75;
+		windowHeight = static_cast<int>(vidMode->height * 0.75);
 	if (x == -1)
-		x = vidMode->width * 0.25 * 0.5;
+		x = static_cast<int>(vidMode->width * 0.25 * 0.5);
 	if (y == -1)
-		y = vidMode->height * 0.25 * 0.5;
+		y = static_cast<int>(vidMode->height * 0.25 * 0.5);
 	if (fullscreen)
 		window = glfwCreateWindow(static_cast<int>(vidMode->width), static_cast<int>(vidMode->height), windowName.c_str(), glfwGetPrimaryMonitor(), nullptr);
 	else

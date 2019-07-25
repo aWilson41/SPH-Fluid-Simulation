@@ -1,13 +1,10 @@
 #version 460
-
-struct PhongMaterial
+struct Material
 {
 	vec3 diffuseColor;
-	vec4 specularColor;
 	vec3 ambientColor;
 };
-
-uniform PhongMaterial mat;
+uniform Material mat;
 
 out vec4 fColor;
 

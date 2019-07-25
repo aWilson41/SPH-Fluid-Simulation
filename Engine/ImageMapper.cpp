@@ -11,9 +11,9 @@ ImageMapper::ImageMapper()
 	planeSource = new PlaneSource();
 	planeSource->update();
 
-	propertyMap.clear();
-	propertyMap.addProperty("FormatGrayscale", false);
-	propertyMap.addProperty("FormatRGB", false);
+	objectProperties->clear();
+	objectProperties->addProperty("FormatGrayscale", false);
+	objectProperties->addProperty("FormatRGB", false);
 }
 
 ImageMapper::~ImageMapper()
@@ -21,6 +21,8 @@ ImageMapper::~ImageMapper()
 	if (planeSource != nullptr)
 		delete planeSource;
 }
+
+GLuint ImageMapper::getShaderProgramID() { return shaderProgram->getProgramID(); }
 
 void ImageMapper::setInput(ImageData* data)
 {
@@ -45,13 +47,13 @@ void ImageMapper::update()
 	const GLuint numComps = imageData->getNumComps();
 	if (numComps == 1)
 	{
-		propertyMap.setProperty("FormatGrayscale", true);
-		propertyMap.setProperty("FormatRGB", false);
+		objectProperties->setProperty("FormatGrayscale", true);
+		objectProperties->setProperty("FormatRGB", false);
 	}
 	else if (numComps == 3)
 	{
-		propertyMap.setProperty("FormatGrayscale", false);
-		propertyMap.setProperty("FormatRGB", true);
+		objectProperties->setProperty("FormatGrayscale", false);
+		objectProperties->setProperty("FormatRGB", true);
 	}
 	else
 		printf("Error: ImageMapper only supports 1 or 3 components.\n");
@@ -123,17 +125,28 @@ void ImageMapper::updateBuffer()
 	// Set it's location and access scheme in vao
 	GLuint posAttribLocation = 0;// glGetAttribLocation(shaderID, "inPos");
 	glEnableVertexAttribArray(posAttribLocation);
-	glVertexAttribPointer(posAttribLocation, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 3, (void*)0);
+	glVertexAttribPointer(posAttribLocation, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 3, (void*)(uintptr_t)0);
 
 	GLint size2 = sizeof(GLfloat) * 2 * numPts;
 	glBufferSubData(GL_ARRAY_BUFFER, size1, size2, texCoordData);
 	// Set it's location and access scheme in vao
 	GLuint texCoordAttribLocation = 2;// glGetAttribLocation(shaderID, "inTexCoord");
 	glEnableVertexAttribArray(texCoordAttribLocation);
-	glVertexAttribPointer(texCoordAttribLocation, 2, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 2, (void*)size1);
+	glVertexAttribPointer(texCoordAttribLocation, 2, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 2, (void*)(uintptr_t)size1);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
+}
+
+void ImageMapper::use(Renderer* ren)
+{
+	if (imageData == nullptr || vaoID == -1)
+		return;
+
+	if (objectProperties->isOutOfDate())
+		shaderProgram = Shaders::getShader(ren, "ImageMapper", objectProperties->getPropertyBits());
+
+	glUseProgram(shaderProgram->getProgramID());
 }
 
 void ImageMapper::draw(Renderer* ren)
@@ -145,10 +158,9 @@ void ImageMapper::draw(Renderer* ren)
 	GLint polyMode;
 	glGetIntegerv(GL_POLYGON_MODE, &polyMode);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-	if (propertyMap.isOutOfDate()) // Or current property bits != previous
-		shaderProgram = Shaders::getShader(ren, "ImageMapper", propertyMap.getPropertyBits());
-	glUseProgram(shaderProgram->getProgramID());
 
+	// Object uniforms
+	glUseProgram(shaderProgram->getProgramID());
 	glm::mat4 mvp = ren->getCamera()->proj * ren->getCamera()->view * model * imageSizeMat;
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgram->getProgramID(), "mvp_matrix"), 1, GL_FALSE, &mvp[0][0]);
 

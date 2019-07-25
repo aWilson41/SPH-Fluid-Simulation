@@ -1,9 +1,8 @@
 #pragma once
 #include "AbstractMapper.h"
-#include "MathHelper.h"
 #include "Types.h"
 
-class Material;
+class PhongMaterial;
 class PolyData;
 class ShaderProgram;
 
@@ -18,10 +17,11 @@ public:
 public:
 	PolyData* getInput() { return polyData; }
 	ShaderProgram* getShaderProgram() { return shaderProgram; }
-	Material* getMaterial() { return material; }
+	PhongMaterial* getMaterial() { return material; }
 	glm::mat4 getModelMatrix() { return model; }
 	CellType getPolyRepresentation() { return representation; }
 	GLfloat getPointSize() { return pointSize; }
+	GLuint getShaderProgramID() override;
 
 	void setInput(PolyData* input) { polyData = input; }
 	void setShaderProgram(ShaderProgram* shaderProgram)
@@ -29,7 +29,7 @@ public:
 		PolyDataMapper::shaderProgram = shaderProgram;
 		//forceShader = true;
 	}
-	void setMaterial(Material* material) { PolyDataMapper::material = material; }
+	void setMaterial(PhongMaterial* material) { PolyDataMapper::material = material; }
 	void setModelMatrix(glm::mat4 model) { PolyDataMapper::model = model; }
 	void setPolyRepresentation(CellType representation) { PolyDataMapper::representation = representation; }
 	void setPointSize(GLfloat pointSize) { PolyDataMapper::pointSize = pointSize; }
@@ -40,6 +40,8 @@ public:
 
 	void update() override;
 
+	void use(Renderer* ren) override;
+
 	void draw(Renderer* ren) override;
 
 protected:
@@ -49,7 +51,7 @@ protected:
 
 protected:
 	PolyData* polyData = nullptr;
-	Material* material = nullptr;
+	PhongMaterial* material = nullptr;
 	glm::mat4 model = glm::mat4(1.0f);
 
 	GLuint vboID = -1;
