@@ -57,7 +57,7 @@ void ShaderProgram::compileProgram()
 	// We can delete the shaders after they're compiled and linked
 	glDeleteShader(vertexShaderID);
 	glDeleteShader(fragShaderID);
-
+	 
 	GLint link_ok = GL_FALSE;
 	glGetProgramiv(programID, GL_LINK_STATUS, &link_ok);
 	if (!link_ok)

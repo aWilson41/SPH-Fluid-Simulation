@@ -8,10 +8,9 @@ template<size_t T>
 class PropertyMap
 {
 public:
-	std::bitset<T> getPropertyBits()
-	{
-		return propertyBits;
-	}
+	std::bitset<T> getPropertyBits() { return propertyBits; }
+	std::map<std::string, size_t> getIndexMap() { return indexMap; }
+	bool getProperty(std::string key) { return propertyBits[indexMap[key]]; }
 
 	// Returns assigned index in bitset
 	size_t addProperty(std::string key, bool initialState = false)
@@ -24,7 +23,7 @@ public:
 
 	void setProperty(std::string key, bool state)
 	{
-		if (!outOfDate && propertyBits[indexMap[key]] != state)
+		if (!outOfDate && indexMap.find(key) != indexMap.end() && propertyBits[indexMap[key]] != state)
 			outOfDate = true;
 		propertyBits.set(indexMap[key], state);
 	}

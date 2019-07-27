@@ -189,7 +189,7 @@ void PolyDataMapper::use(Renderer* ren)
 		return;
 
 	if (objectProperties->isOutOfDate())
-		shaderProgram = Shaders::getShader(ren, "PolyDataMapper", objectProperties->getPropertyBits());
+		shaderProgram = Shaders::getShader(ren, "PolyDataMapper", &properties);
 
 	glUseProgram(shaderProgram->getProgramID());
 }

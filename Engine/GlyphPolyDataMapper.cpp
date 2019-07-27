@@ -92,7 +92,7 @@ void GlyphPolyDataMapper::updateInfo()
 	hasIndices = (polyData->getIndexData() != nullptr && useIndex);
 	hasTexCoords = useTexCoords = false;
 
-	objectProperties->setProperty("Use_VertexColors", hasScalars);
+	objectProperties->setProperty("Use_Scalars", hasScalars);
 	objectProperties->setProperty("Use_Indices", hasIndices);
 
 	// Determine size of gpu mem to allocate we assume it has normals and offsets
@@ -176,7 +176,7 @@ void GlyphPolyDataMapper::use(Renderer* ren)
 		return;
 
 	if (objectProperties->isOutOfDate())
-		shaderProgram = Shaders::getShader(ren, "GlyphPolyDataMapper", objectProperties->getPropertyBits());
+		shaderProgram = Shaders::getShader(ren, "GlyphPolyDataMapper", &properties);
 
 	glUseProgram(shaderProgram->getProgramID());
 }

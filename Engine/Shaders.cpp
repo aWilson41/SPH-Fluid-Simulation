@@ -41,9 +41,10 @@ namespace Shaders
 		if (ren == nullptr || properties == nullptr)
 			return nullptr;
 
+		properties->update();
+
 		std::string shaderPath = "Shaders/" + ren->getShaderDirectory() + mapperName + '/';
 		// Read the mapping file to find the correct shader
-		//printf("Bitset: %s\n", propertyKey.to_string().c_str());
 		unsigned long long lineNum = properties->getKey();
 		std::ifstream file;
 		file.open(shaderPath + "mappings.csv");
@@ -66,7 +67,6 @@ namespace Shaders
 		// Eventually this will be replaced with a replaceable shader system that maps the keys directly to the construction of the shader
 		// so there is no required shader database
 		return LoadVSFSShader("unnamed", shaderPath + vsShaderFileStr, shaderPath + fsShaderFileStr);
-		return nullptr;
 	}
 
 	void deleteShaders()

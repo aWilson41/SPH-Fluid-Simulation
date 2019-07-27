@@ -144,7 +144,7 @@ void ImageMapper::use(Renderer* ren)
 		return;
 
 	if (objectProperties->isOutOfDate())
-		shaderProgram = Shaders::getShader(ren, "ImageMapper", objectProperties->getPropertyBits());
+		shaderProgram = Shaders::getShader(ren, "ImageMapper", &properties);
 
 	glUseProgram(shaderProgram->getProgramID());
 }

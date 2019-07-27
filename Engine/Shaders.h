@@ -3,6 +3,7 @@
 #include <vector>
 
 class Renderer;
+class ShaderProperties;
 
 namespace Shaders
 {
