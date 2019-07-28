@@ -1,7 +1,7 @@
 #include "Engine/GlyphPolyDataMapper.h"
 #include "Engine/PhongMaterial.h"
 #include "Engine/PlaneSource.h"
-#include "Engine/Renderer.h"
+#include "Engine/DeferredRenderer.h"
 #include "Engine/RenderWindow.h"
 #include "Engine/TrackballCamera.h"
 #include "SPHInteractor.h"
@@ -19,7 +19,7 @@ int main(int argc, char *argv[])
 	cam.setFocalPt(0.001505f, -0.000141f, 0.014044f);
 
 	// Create the renderer
-	Renderer ren;
+	DeferredRenderer ren;
 	ren.setCamera(&cam);
 	ren.addMaterial(PhongMaterial(glm::vec3(0.2f, 0.4f, 0.2f), 0.5f));
 	ren.addMaterial(PhongMaterial(glm::vec3(0.2f, 0.2f, 0.2f), 0.5f));
@@ -34,14 +34,14 @@ int main(int argc, char *argv[])
 	ren.addRenderItem(iren.getParticleMapper());
 
 	// Setup a ground plane
-	PlaneSource planeSource;
+	/*PlaneSource planeSource;
 	planeSource.update();
 	PolyDataMapper planeMapper;
 	planeMapper.setInput(planeSource.getOutput());
 	planeMapper.setMaterial(ren.getMaterial(0));
 	planeMapper.setModelMatrix(MathHelp::matrixScale(5.0f, 1.0f, 5.0f));
 	planeMapper.update();
-	ren.addRenderItem(&planeMapper);
+	ren.addRenderItem(&planeMapper);*/
 
 	// Update loop
 	while (renWindow.isActive())

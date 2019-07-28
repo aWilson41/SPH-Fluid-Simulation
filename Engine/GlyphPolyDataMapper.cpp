@@ -170,7 +170,7 @@ void GlyphPolyDataMapper::updateBuffer()
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
-void GlyphPolyDataMapper::use(Renderer* ren)
+void GlyphPolyDataMapper::useShader(Renderer* ren)
 {
 	if (polyData == nullptr || vaoID == -1)
 		return;

@@ -26,7 +26,7 @@ public:
 	GLuint getProgramID() { return programID; }
 
 protected:
-	std::string shaderName = "none";
+	std::string shaderName = "unnamed";
 	GLuint programID = -1;
 	GLuint vertexShaderID = -1;
 	GLuint fragShaderID = -1;
@@ -35,16 +35,4 @@ protected:
 	std::string fragFileName = "";
 	std::string vertexShaderSrc = "";
 	std::string fragShaderSrc = "";
-};
-
-// Constructs the shader through database lookup using the properties
-class DBShaderProgram : public ShaderProgram
-{
-public:
-	DBShaderProgram(std::string name) : ShaderProgram(name) { }
-
-	void lookupAndCreate(unsigned long long key);
-
-protected:
-	unsigned long long key = 0;
 };

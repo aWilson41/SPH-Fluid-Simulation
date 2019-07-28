@@ -183,7 +183,7 @@ void PolyDataMapper::updateBuffer()
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
-void PolyDataMapper::use(Renderer* ren)
+void PolyDataMapper::useShader(Renderer* ren)
 {
 	if (polyData == nullptr || vaoID == -1)
 		return;

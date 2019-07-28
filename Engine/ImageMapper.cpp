@@ -138,7 +138,7 @@ void ImageMapper::updateBuffer()
 	glBindVertexArray(0);
 }
 
-void ImageMapper::use(Renderer* ren)
+void ImageMapper::useShader(Renderer* ren)
 {
 	if (imageData == nullptr || vaoID == -1)
 		return;

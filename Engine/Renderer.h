@@ -17,7 +17,7 @@ public:
 public:
 	virtual void render();
 	// The direct renderer uses the default framebuffer
-	virtual void resizeFramebuffer(int width, int height) { }
+	virtual void resizeFramebuffer(int width, int height);
 
 	// Might split mapper into actor where this becomes addActor
 	void addRenderItem(AbstractMapper* mapper) { mappers.push_back(mapper); }

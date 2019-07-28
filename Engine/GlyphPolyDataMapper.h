@@ -34,10 +34,12 @@ public:
 	GLfloat* getColorData() { return colorData; }
 	UINT getInstanceCount() { return instanceCount; }
 
+	std::string getMapperName() override { return "GlyphPolyDataMapper"; }
+
 	// Updates the buffer based on the set poly data. If it's the first time it initializes the buffer
 	void update() override;
 
-	void use(Renderer* ren) override;
+	void useShader(Renderer* ren) override;
 
 	void draw(Renderer* ren) override;
 

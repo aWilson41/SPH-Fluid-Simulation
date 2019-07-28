@@ -77,15 +77,25 @@ public:
 	}
 
 	virtual GLuint getShaderProgramID() = 0;
+	bool getUseCustomShader() { return useCustomShader; }
+	virtual std::string getMapperName() = 0;
+
+	void setUseCustomShader(bool useCustomShader) { AbstractMapper::useCustomShader = useCustomShader; }
 
 	virtual void update() = 0;
 
 	// Binds the shader program
-	virtual void use(Renderer* ren) = 0;
+	void use(Renderer* ren)
+	{
+		if (!useCustomShader)
+			useShader(ren);
+	}
+	virtual void useShader(Renderer* ren) = 0;
 
 	virtual void draw(Renderer* ren) = 0;
 
 protected:
 	PropertyMap<32>* objectProperties = nullptr;
 	ShaderProperties properties;
+	bool useCustomShader = false;
 };

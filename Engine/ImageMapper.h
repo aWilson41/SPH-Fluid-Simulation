@@ -19,10 +19,12 @@ public:
 	void setInput(ImageData* data);
 	void setModelMatrix(glm::mat4 model) { ImageMapper::model = model; }
 
+	std::string getMapperName() override { return "ImageMapper"; }
+
 	// Updates the buffers to match the input data
 	void update() override;
 
-	void use(Renderer* ren) override;
+	void useShader(Renderer* ren) override;
 
 	void draw(Renderer* ren) override;
 

@@ -19,7 +19,7 @@ namespace Shaders
 	}*/
 
 	// Load shader program from source
-	ShaderProgram* LoadVSFSShader(std::string shaderName, std::string vsPath, std::string fsPath)
+	ShaderProgram* loadVSFSShader(std::string shaderName, std::string vsPath, std::string fsPath)
 	{
 		ShaderProgram* shader = new ShaderProgram(shaderName);
 		shader->loadVertexShader(vsPath);
@@ -66,7 +66,7 @@ namespace Shaders
 
 		// Eventually this will be replaced with a replaceable shader system that maps the keys directly to the construction of the shader
 		// so there is no required shader database
-		return LoadVSFSShader("unnamed", shaderPath + vsShaderFileStr, shaderPath + fsShaderFileStr);
+		return loadVSFSShader("unnamed", shaderPath + vsShaderFileStr, shaderPath + fsShaderFileStr);
 	}
 
 	void deleteShaders()

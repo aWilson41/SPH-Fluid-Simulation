@@ -6,14 +6,19 @@ struct Material
 };
 
 uniform Material mat;
-uniform vec3 lightDir;
 
+smooth in vec3 pos;
 smooth in vec3 normal;
 
-out vec4 fColor;
+layout (location = 0) out vec3 gPosition;
+layout (location = 1) out vec3 gNormal;
+layout (location = 2) out vec4 gDiffuseColor;
+layout (location = 3) out vec4 gAmbientColor;
 
 void main()
 {
-	vec3 color = clamp(dot(lightDir, normal) * mat.diffuseColor + mat.ambientColor, 0.0f, 1.0f);
-	fColor = vec4(color, 1.0f);
+	gPosition = pos;
+	gNormal = normal;
+	gDiffuseColor = vec4(mat.diffuseColor, 1.0f);
+	gAmbientColor = vec4(mat.ambientColor, 1.0f);
 }

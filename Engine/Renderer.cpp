@@ -27,6 +27,9 @@ bool Renderer::containsRenderItem(AbstractMapper* mapper)
 
 void Renderer::render()
 {
+	//glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 	for (UINT i = 0; i < mappers.size(); i++)
 	{
 		AbstractMapper* mapper = mappers[i];
@@ -40,3 +43,5 @@ void Renderer::render()
 		mapper->draw(this);
 	}
 }
+
+void Renderer::resizeFramebuffer(int width, int height) { glViewport(0, 0, width, height); }

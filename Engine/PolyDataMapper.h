@@ -27,7 +27,7 @@ public:
 	void setShaderProgram(ShaderProgram* shaderProgram)
 	{
 		PolyDataMapper::shaderProgram = shaderProgram;
-		//forceShader = true;
+		useCustomShader = true;
 	}
 	void setMaterial(PhongMaterial* material) { PolyDataMapper::material = material; }
 	void setModelMatrix(glm::mat4 model) { PolyDataMapper::model = model; }
@@ -38,9 +38,11 @@ public:
 	void setUseScalars(bool val) { useScalars = val; }
 	void setUseIndex(bool val) { useIndex = val; }
 
+	std::string getMapperName() override { return "PolyDataMapper"; }
+
 	void update() override;
 
-	void use(Renderer* ren) override;
+	void useShader(Renderer* ren) override;
 
 	void draw(Renderer* ren) override;
 

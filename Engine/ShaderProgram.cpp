@@ -100,9 +100,3 @@ void ShaderProgram::release()
 	glDeleteShader(fragShaderID);
 	glDeleteProgram(programID);
 }
-
-
-void DBShaderProgram::lookupAndCreate(unsigned long long key)
-{
-
-}
