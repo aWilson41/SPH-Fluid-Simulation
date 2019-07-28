@@ -26,6 +26,7 @@ private:
 	GLuint gDiffuseColorTexID = -1;
 	GLuint gAmbientColorTexID = -1;
 	GLuint gDepthBufferID = -1;
+	GLuint emptyVaoID = -1;
 
 	ShaderProgram* lightingPassShader = nullptr;
 };

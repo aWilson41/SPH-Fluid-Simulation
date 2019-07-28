@@ -17,6 +17,10 @@ DeferredRenderer::DeferredRenderer()
 	glUniform1i(glGetUniformLocation(lightPassShaderID, "gDiffuseColor"), 2);
 	glUniform1i(glGetUniformLocation(lightPassShaderID, "gAmbientColor"), 3);
 	glUseProgram(0);
+
+	// A non-zero vao must be bound even if not using vertex attributes
+	glGenVertexArrays(1, &emptyVaoID);
+
 }
 
 DeferredRenderer::~DeferredRenderer()
@@ -71,6 +75,7 @@ void DeferredRenderer::render()
 		glUniform3fv(lightDirLocation, 1, &lightDir[0]);
 
 	// Then render the quad
+	glBindVertexArray(emptyVaoID);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	
 	// Copy the gbuffers depth buffer to the default for possible further forward rendering
