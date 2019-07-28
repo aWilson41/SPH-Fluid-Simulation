@@ -50,7 +50,7 @@ void DeferredRenderer::render()
 
 	// Back to the default fbo to do the lighting pass
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glClear(GL_COLOR_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	GLuint lightPassShaderID = lightingPassShader->getProgramID();
 	glUseProgram(lightPassShaderID);
@@ -70,7 +70,7 @@ void DeferredRenderer::render()
 	if (lightDirLocation != -1)
 		glUniform3fv(lightDirLocation, 1, &lightDir[0]);
 
-	// Then render the quad and force the shader
+	// Then render the quad
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	
 	// Copy the gbuffers depth buffer to the default for possible further forward rendering
@@ -145,7 +145,8 @@ void DeferredRenderer::resizeFramebuffer(int width, int height)
 
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 		printf("Error: Framebuffer incomplete\n");
-	// Back to the default
+
+	// Back to the default fbo
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	glViewport(0, 0, width, height);

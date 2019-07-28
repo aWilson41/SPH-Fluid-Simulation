@@ -28,8 +28,4 @@ private:
 	GLuint gDepthBufferID = -1;
 
 	ShaderProgram* lightingPassShader = nullptr;
-
-	// Default framebuffer size, likely to get resized
-	int framebufferWidth = 100;
-	int framebufferHeight = 100;
 };

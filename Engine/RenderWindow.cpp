@@ -1,6 +1,6 @@
 #include "RenderWindow.h"
-#include "WindowInteractor.h"
 #include "Renderer.h"
+#include "WindowInteractor.h"
 #include <GLFW/glfw3.h>
 #include <stdexcept>
 
@@ -18,7 +18,7 @@ RenderWindow::RenderWindow(std::string windowName, int x, int y, int width, int 
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // Deprecated functionality removed
 	//glfwWindowHint(GLFW_VISIBLE, GL_FALSE);
 
 	createWindow(windowName, x, y, width, height, fullscreen);
@@ -27,7 +27,7 @@ RenderWindow::RenderWindow(std::string windowName, int x, int y, int width, int 
 	glEnable(GL_DEPTH_CLAMP);
 	glEnable(GL_MULTISAMPLE);
 	glDisable(GL_CULL_FACE);
-	glDepthFunc(GL_LESS);
+	glDepthFunc(GL_LESS); // The default
 	glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
 }
 
@@ -45,8 +45,6 @@ void RenderWindow::render()
 {
 	if (window == nullptr || ren == nullptr)
 		return;
-
-	glClearColor(0.5f, 0.3f, 0.25f, 1.0f); // Move this
 
 	ren->render();
 

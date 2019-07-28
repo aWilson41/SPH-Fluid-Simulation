@@ -5,6 +5,7 @@
 
 class AbstractMapper;
 class Camera;
+class ImageData;
 class PhongMaterial;
 class ShaderProgram;
 
@@ -12,6 +13,7 @@ class ShaderProgram;
 class Renderer
 {
 public:
+	Renderer();
 	~Renderer();
 
 public:
@@ -27,13 +29,15 @@ public:
 
 	PhongMaterial* getMaterial(UINT i) { return materials[i]; }
 	AbstractMapper* getRenderItem(UINT i) { return mappers[i]; }
-
 	// Returns the currently bound shader
 	ShaderProgram* getCurrentShaderProgram() { return currShaderProgram; }
 	Camera* getCamera() { return cam; }
+	ImageData* getOutputImage();
+	float* getClearColor() { return clearColor; }
 
 	void setCurrentShaderProgram(ShaderProgram* program) { currShaderProgram = program; }
 	void setCamera(Camera* cam) { Renderer::cam = cam; }
+	void setClearColor(float r, float g, float b, float a);
 
 	// Returns the shader directory for this particular renderer
 	virtual std::string getShaderDirectory() { return "DirectRasterize/"; };
@@ -48,4 +52,9 @@ protected:
 
 	PropertyMap<32> sceneProperties;
 	glm::vec3 lightDir = glm::vec3(0.0f, 1.0f, 1.0f); // Temporarily only supporting a single directional light
+
+	// Default framebuffer size, likely to get resized
+	int framebufferWidth = 100;
+	int framebufferHeight = 100;
+	float clearColor[4] = { 0.5f, 0.3f, 0.25f, 1.0f };
 };

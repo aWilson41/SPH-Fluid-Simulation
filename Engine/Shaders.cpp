@@ -8,16 +8,6 @@ namespace Shaders
 {
 	std::vector<ShaderProgram*> shaderCache;
 
-	/*ShaderProgram* getShader(std::string name)
-	{
-		for (unsigned int i = 0; i < shaders.size(); i++)
-		{
-			if (shaders[i]->getName() == name)
-				return shaders[i];
-		}
-		return nullptr;
-	}*/
-
 	// Load shader program from source
 	ShaderProgram* loadVSFSShader(std::string shaderName, std::string vsPath, std::string fsPath)
 	{
@@ -28,13 +18,6 @@ namespace Shaders
 		shaderCache.push_back(shader);
 		return shader;
 	}
-
-	// Construct Shader from its properties
-	/*void LoadVSFSShader(ShaderProgram* shaderProgram)
-	{
-		if (shaderProgram == nullptr)
-			return;
-	}*/
 
 	ShaderProgram* getShader(Renderer* ren, std::string mapperName, ShaderProperties* properties)
 	{

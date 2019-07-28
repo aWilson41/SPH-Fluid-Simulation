@@ -1,7 +1,13 @@
 #include "Renderer.h"
 #include "AbstractMapper.h"
+#include "ImageData.h"
 #include "PhongMaterial.h"
 #include "Shaders.h"
+
+Renderer::Renderer()
+{
+	glClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]);
+}
 
 Renderer::~Renderer()
 {
@@ -27,7 +33,7 @@ bool Renderer::containsRenderItem(AbstractMapper* mapper)
 
 void Renderer::render()
 {
-	//glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	for (UINT i = 0; i < mappers.size(); i++)
@@ -44,4 +50,47 @@ void Renderer::render()
 	}
 }
 
-void Renderer::resizeFramebuffer(int width, int height) { glViewport(0, 0, width, height); }
+void Renderer::resizeFramebuffer(int width, int height)
+{
+	framebufferWidth = width;
+	framebufferHeight = height;
+	glViewport(0, 0, width, height);
+}
+
+ImageData* Renderer::getOutputImage()
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	ImageData* results = new ImageData();
+	UINT dim[2] = { framebufferWidth, framebufferHeight };
+	double spacing[2] = { 1.0, 1.0 };
+	double origin[2] = { 0.0, 0.0 };
+	results->allocate2DImage(dim, spacing, origin, 4, ScalarType::UCHAR_T);
+
+	unsigned char* buffer = new unsigned char[dim[0] * dim[1] * 4];
+	glReadPixels(0, 0, framebufferWidth, framebufferHeight, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
+	unsigned char* imgPtr = static_cast<unsigned char*>(results->getData());
+	// Flip the image
+	for (UINT y = 0; y < dim[1]; y++)
+	{
+		for (UINT x = 0; x < dim[0]; x++)
+		{
+			UINT index1 = (y * framebufferWidth + x) * 4;
+			UINT index2 = (((framebufferHeight - 1) - y) * framebufferWidth + x) * 4;
+			imgPtr[index1] = buffer[index2];
+			imgPtr[index1 + 1] = buffer[index2 + 1];
+			imgPtr[index1 + 2] = buffer[index2 + 2];
+			imgPtr[index1 + 3] = buffer[index2 + 3];
+		}
+	}
+	delete[] buffer;
+	return results;
+}
+
+void Renderer::setClearColor(float r, float g, float b, float a)
+{
+	clearColor[0] = r;
+	clearColor[1] = g;
+	clearColor[2] = b;
+	clearColor[3] = a;
+	glClearColor(r, g, b, a);
+}

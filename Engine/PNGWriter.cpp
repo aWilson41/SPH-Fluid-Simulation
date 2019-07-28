@@ -35,18 +35,14 @@ void PNGWriter::update()
 	}
 	else if (numComps == 3)
 	{
-		// Image must be flipped vertically
-		for (UINT x = 0; x < dim[0]; x++)
+		for (UINT i = 0; i < dim[0] * dim[1]; i++)
 		{
-			for (UINT y = 0; y < dim[1]; y++)
-			{
-				int index = 4 * (dim[0] * y + x);
-				int index1 = 3 * (dim[0] * (dim[1] - y - 1) + x);
-				image[index] = data[index1];
-				image[index + 1] = data[index1 + 1];
-				image[index + 2] = data[index1 + 2];
-				image[index + 3] = 255;
-			}
+			UINT i1 = i * 3;
+			UINT i2 = i * 4;
+			image[i2] = data[i1];
+			image[i2 + 1] = data[i1 + 1];
+			image[i2 + 2] = data[i1 + 2];
+			image[i2 + 3] = 255;
 		}
 	}
 	else if (numComps == 4)

@@ -1,7 +1,9 @@
+#include "Engine/DeferredRenderer.h"
 #include "Engine/GlyphPolyDataMapper.h"
+#include "Engine/ImageData.h"
 #include "Engine/PhongMaterial.h"
 #include "Engine/PlaneSource.h"
-#include "Engine/DeferredRenderer.h"
+#include "Engine/PNGWriter.h"
 #include "Engine/RenderWindow.h"
 #include "Engine/TrackballCamera.h"
 #include "SPHInteractor.h"
@@ -44,10 +46,23 @@ int main(int argc, char *argv[])
 	ren.addRenderItem(&planeMapper);*/
 
 	// Update loop
+	int i = 0;
 	while (renWindow.isActive())
 	{
-		iren.update(); // Updates the simulation
+		// Update the interactor (processes input and the simulation)
+		iren.update();
+		// Do the render, swap buffers, poll for input
 		renWindow.render();
+		if (i == 0)
+		{
+			PNGWriter imgWriter;
+			ImageData* img = ren.getOutputImage();
+			imgWriter.setInput(img);
+			imgWriter.setFileName("C:/Users/Andx_/Desktop/test.png");
+			imgWriter.update();
+			delete img;
+		}
+		i++;
 	}
 
 	return 1;
