@@ -52,30 +52,31 @@ void Renderer::render()
 
 void Renderer::resizeFramebuffer(int width, int height)
 {
-	framebufferWidth = width;
-	framebufferHeight = height;
+	defaultFboWidth = width;
+	defaultFboHeight = height;
 	glViewport(0, 0, width, height);
 }
 
 ImageData* Renderer::getOutputImage()
 {
+	// Bind the default fbo
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	ImageData* results = new ImageData();
-	UINT dim[2] = { static_cast<UINT>(framebufferWidth), static_cast<UINT>(framebufferHeight) };
+	UINT dim[2] = { static_cast<UINT>(defaultFboWidth), static_cast<UINT>(defaultFboHeight) };
 	double spacing[2] = { 1.0, 1.0 };
 	double origin[2] = { 0.0, 0.0 };
 	results->allocate2DImage(dim, spacing, origin, 4, ScalarType::UCHAR_T);
 
 	unsigned char* buffer = new unsigned char[dim[0] * dim[1] * 4u];
-	glReadPixels(0, 0, framebufferWidth, framebufferHeight, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
+	glReadPixels(0, 0, defaultFboWidth, defaultFboHeight, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
 	unsigned char* imgPtr = static_cast<unsigned char*>(results->getData());
 	// Flip the image
 	for (UINT y = 0; y < dim[1]; y++)
 	{
 		for (UINT x = 0; x < dim[0]; x++)
 		{
-			UINT index1 = (y * framebufferWidth + x) * 4;
-			UINT index2 = (((framebufferHeight - 1) - y) * framebufferWidth + x) * 4;
+			UINT index1 = (y * defaultFboWidth + x) * 4;
+			UINT index2 = (((defaultFboHeight - 1) - y) * defaultFboWidth + x) * 4;
 			imgPtr[index1] = buffer[index2];
 			imgPtr[index1 + 1] = buffer[index2 + 1];
 			imgPtr[index1 + 2] = buffer[index2 + 2];

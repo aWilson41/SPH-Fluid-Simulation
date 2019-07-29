@@ -57,12 +57,16 @@ add_custom_command(
 	COMMAND ${CMAKE_COMMAND} -E copy_directory
 			${CMAKE_SOURCE_DIR}/Engine/Shaders
 			${CMAKE_CURRENT_BINARY_DIR}/Shaders)
-			
 add_custom_command(
 	TARGET SPHFluidSim POST_BUILD
 	COMMAND ${CMAKE_COMMAND} -E copy_directory
 			${CMAKE_SOURCE_DIR}/Engine/Shaders
 			${CMAKE_CURRENT_BINARY_DIR}/Release/Shaders)
+add_custom_command(
+	TARGET SPHFluidSim POST_BUILD
+	COMMAND ${CMAKE_COMMAND} -E copy_directory
+			${CMAKE_SOURCE_DIR}/Engine/Shaders
+			${CMAKE_CURRENT_BINARY_DIR}/Debug/Shaders)
 			
 # Sort these into folders/filters
 source_group("Engine" FILES ${ENGINE_FILES})

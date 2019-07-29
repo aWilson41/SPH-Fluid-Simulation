@@ -1,32 +1,28 @@
 #pragma once
 #include "Renderer.h"
 
-class PlaneSource;
-class PolyDataMapper;
+class RenderPass;
 
 // Implements a deferred renderings process
-// Uses the custom framebuffer
+// Specifically, it implements render passes which manage various framebuffers
 class DeferredRenderer : public Renderer
 {
 public:
-	DeferredRenderer();
+	DeferredRenderer(bool useDefaults = true);
 	~DeferredRenderer();
 
 public:
 	void render() override;
+
+	void pass();
+	void quadPass();
 
 	void resizeFramebuffer(int width, int height) override;
 
 	std::string getShaderDirectory() override { return "DeferredRasterize/"; };
 
 private:
-	GLuint gBufferID = -1;
-	GLuint gPosTexID = -1;
-	GLuint gNormalTexID = -1;
-	GLuint gDiffuseColorTexID = -1;
-	GLuint gAmbientColorTexID = -1;
-	GLuint gDepthBufferID = -1;
 	GLuint emptyVaoID = -1;
-
-	ShaderProgram* lightingPassShader = nullptr;
+	bool useDefaults = true;
+	std::vector<RenderPass*> renderPasses;
 };
