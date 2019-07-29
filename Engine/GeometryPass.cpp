@@ -3,11 +3,6 @@
 #include "Shaders.h"
 #include <string>
 
-GeometryPass::GeometryPass()
-{
-	
-}
-
 GeometryPass::~GeometryPass()
 {
 	if (gBufferID != -1)

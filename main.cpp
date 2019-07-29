@@ -8,6 +8,9 @@
 #include "Engine/TrackballCamera.h"
 #include "SPHInteractor.h"
 
+#include "Engine/GeometryPass.h"
+#include "Engine/LightingPass.h"
+
 int main(int argc, char *argv[])
 {
 	// Create the window
@@ -22,7 +25,6 @@ int main(int argc, char *argv[])
 
 	// Create the renderer
 	DeferredRenderer ren;
-	//Renderer ren;
 	ren.setCamera(&cam);
 	ren.addMaterial(PhongMaterial(glm::vec3(0.2f, 0.4f, 0.2f), 0.5f));
 	ren.addMaterial(PhongMaterial(glm::vec3(0.2f, 0.2f, 0.2f), 0.5f));

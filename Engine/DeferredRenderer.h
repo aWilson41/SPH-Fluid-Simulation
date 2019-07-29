@@ -17,6 +17,8 @@ public:
 	void pass();
 	void quadPass();
 
+	void addPass(RenderPass* pass) { renderPasses.push_back(pass); }
+
 	void resizeFramebuffer(int width, int height) override;
 
 	std::string getShaderDirectory() override { return "DeferredRasterize/"; };

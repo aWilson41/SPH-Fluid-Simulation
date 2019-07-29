@@ -3,6 +3,8 @@
 
 class ShaderProgram;
 
+// Implements a basic phong lighting pass on the default fbo
+// Should give it's own fbo eventually
 class LightingPass : public RenderPass
 {
 public:
@@ -15,5 +17,8 @@ public:
 	void resizeFramebuffer(int width, int height) override;
 
 private:
-	ShaderProgram* lightingPassShader = nullptr;
+	GLuint fboID = -1;
+	GLuint colorTexID = -1;
+	GLuint depthBufferID = -1;
+	ShaderProgram* shader = nullptr;
 };

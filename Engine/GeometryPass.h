@@ -4,7 +4,6 @@
 class GeometryPass : public RenderPass
 {
 public:
-	GeometryPass();
 	~GeometryPass();
 
 public:
