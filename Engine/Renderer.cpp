@@ -61,12 +61,12 @@ ImageData* Renderer::getOutputImage()
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	ImageData* results = new ImageData();
-	UINT dim[2] = { framebufferWidth, framebufferHeight };
+	UINT dim[2] = { static_cast<UINT>(framebufferWidth), static_cast<UINT>(framebufferHeight) };
 	double spacing[2] = { 1.0, 1.0 };
 	double origin[2] = { 0.0, 0.0 };
 	results->allocate2DImage(dim, spacing, origin, 4, ScalarType::UCHAR_T);
 
-	unsigned char* buffer = new unsigned char[dim[0] * dim[1] * 4];
+	unsigned char* buffer = new unsigned char[dim[0] * dim[1] * 4u];
 	glReadPixels(0, 0, framebufferWidth, framebufferHeight, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
 	unsigned char* imgPtr = static_cast<unsigned char*>(results->getData());
 	// Flip the image

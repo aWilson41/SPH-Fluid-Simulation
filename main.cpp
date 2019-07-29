@@ -22,6 +22,7 @@ int main(int argc, char *argv[])
 
 	// Create the renderer
 	DeferredRenderer ren;
+	//Renderer ren;
 	ren.setCamera(&cam);
 	ren.addMaterial(PhongMaterial(glm::vec3(0.2f, 0.4f, 0.2f), 0.5f));
 	ren.addMaterial(PhongMaterial(glm::vec3(0.2f, 0.2f, 0.2f), 0.5f));
@@ -36,34 +37,23 @@ int main(int argc, char *argv[])
 	ren.addRenderItem(iren.getParticleMapper());
 
 	// Setup a ground plane
-	/*PlaneSource planeSource;
+	PlaneSource planeSource;
 	planeSource.update();
 	PolyDataMapper planeMapper;
 	planeMapper.setInput(planeSource.getOutput());
 	planeMapper.setMaterial(ren.getMaterial(0));
 	planeMapper.setModelMatrix(MathHelp::matrixScale(5.0f, 1.0f, 5.0f));
 	planeMapper.update();
-	ren.addRenderItem(&planeMapper);*/
+	ren.addRenderItem(&planeMapper);
 
 	// Update loop
-	int i = 0;
 	while (renWindow.isActive())
 	{
 		// Update the interactor (processes input and the simulation)
 		iren.update();
 		// Do the render, swap buffers, poll for input
 		renWindow.render();
-		if (i == 0)
-		{
-			PNGWriter imgWriter;
-			ImageData* img = ren.getOutputImage();
-			imgWriter.setInput(img);
-			imgWriter.setFileName("C:/Users/Andx_/Desktop/test.png");
-			imgWriter.update();
-			delete img;
-		}
-		i++;
 	}
 
-	return 1;
+	return EXIT_SUCCESS;
 }

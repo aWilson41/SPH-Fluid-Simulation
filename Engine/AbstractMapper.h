@@ -17,6 +17,9 @@ public:
 			renderProperties.getPropertyBits().to_string() +
 			sceneProperties.getPropertyBits().to_string() +
 			objectProperties.getPropertyBits().to_string());
+		renderProperties.makeCurrent();
+		sceneProperties.makeCurrent();
+		objectProperties.makeCurrent();
 		keyLong = key.to_ullong();
 		return keyLong;
 	}

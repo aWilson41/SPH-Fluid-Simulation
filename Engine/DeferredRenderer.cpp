@@ -20,7 +20,6 @@ DeferredRenderer::DeferredRenderer()
 
 	// A non-zero vao must be bound even if not using vertex attributes
 	glGenVertexArrays(1, &emptyVaoID);
-
 }
 
 DeferredRenderer::~DeferredRenderer()
