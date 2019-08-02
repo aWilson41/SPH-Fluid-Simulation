@@ -37,6 +37,8 @@ void DeferredRenderer::render()
 {
 	if (renderPasses.size() != 0)
 		renderPasses[0]->render(this);
+
+	// Always blit the last pass into the default
 }
 
 void DeferredRenderer::pass()

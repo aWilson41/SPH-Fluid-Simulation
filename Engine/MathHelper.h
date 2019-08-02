@@ -39,6 +39,9 @@ public:
 	static glm::mat4 matrixScale(GLfloat x, GLfloat y, GLfloat z);
 	static glm::mat4 matrixScale(GLfloat s);
 
+	static glm::mat3 MathHelp::skewSym(glm::vec3 a);
+	static glm::mat3 rotateVectorToVector(glm::vec3 a, glm::vec3 b);
+
 	// We define the 2d cross product as the length of the 3d
 	static GLfloat cross(glm::vec2 a, glm::vec2 b);
 

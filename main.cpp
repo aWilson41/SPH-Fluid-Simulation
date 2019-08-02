@@ -1,4 +1,5 @@
 #include "Engine/DeferredRenderer.h"
+#include "Engine/RayTraceRenderer.h"
 #include "Engine/GlyphPolyDataMapper.h"
 #include "Engine/ImageData.h"
 #include "Engine/PhongMaterial.h"
@@ -25,6 +26,8 @@ int main(int argc, char *argv[])
 
 	// Create the renderer
 	DeferredRenderer ren;
+	//RayTraceRenderer ren;
+	//Renderer ren;
 	ren.setCamera(&cam);
 	ren.addMaterial(PhongMaterial(glm::vec3(0.2f, 0.4f, 0.2f), 0.5f));
 	ren.addMaterial(PhongMaterial(glm::vec3(0.2f, 0.2f, 0.2f), 0.5f));

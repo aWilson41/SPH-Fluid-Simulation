@@ -146,14 +146,7 @@ void SPHInteractor::update()
 
 	if (rightButtonDown)
 	{
-		glm::vec4 ndc = glm::vec4(
-			mousePos.x * 2.0f - 1.0f,
-			1.0f - mousePos.y * 2.0f,
-			0.0f, 1.0f);
-		glm::vec4 mouseWorldPos = glm::inverse(cam->proj * cam->view) * ndc;
-		mouseWorldPos /= mouseWorldPos.w;
-
-		geom3d::Ray ray = geom3d::Ray(cam->eyePos, glm::normalize(glm::vec3(mouseWorldPos) - cam->eyePos));
+		geom3d::Ray ray = cam->getEyeRay(mousePos.x * 2.0f - 1.0f, 1.0f - mousePos.y * 2.0f);
 		for (UINT i = 0; i < particleMapper->getInstanceCount(); i++)
 		{
 			if (geom3d::intersectSphereRay(geom3d::Sphere(*sphDomain->particles[i].pos, r), ray))

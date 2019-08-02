@@ -2,13 +2,41 @@
 #include <fstream>
 #include <sstream>
 
-std::string ShaderProgram::readShaderFile(std::string filePath)
+void printShaderError(GLuint shaderID)
+{
+	GLint logSize = 0;
+	glGetShaderiv(shaderID, GL_INFO_LOG_LENGTH, &logSize);
+	GLchar* data = new GLchar[logSize];
+	glGetShaderInfoLog(shaderID, logSize, &logSize, data);
+	printf("%s\n", data);
+	delete[] data;
+
+}
+void printLinkerError(GLuint programID)
+{
+	GLint logSize = 0;
+	glGetProgramiv(programID, GL_INFO_LOG_LENGTH, &logSize);
+	GLchar* data = new GLchar[logSize];
+	glGetProgramInfoLog(programID, logSize, &logSize, data);
+	printf("%s\n", data);
+	delete[] data;
+}
+
+
+void ShaderFile::load(std::string fileName, GLenum shaderType)
+{
+	ShaderFile::fileName = fileName;
+	ShaderFile::shaderType = shaderType;
+	srcStr = read();
+}
+
+std::string ShaderFile::read()
 {
 	// Read the shader
-	std::ifstream file(filePath.c_str());
+	std::ifstream file(fileName.c_str());
 	if (file.fail())
 	{
-		printf(("Failed to open: " + filePath + "\n").c_str());
+		printf(("Failed to open: " + fileName + "\n").c_str());
 		return "";
 	}
 	std::stringstream buffer;
@@ -16,47 +44,58 @@ std::string ShaderProgram::readShaderFile(std::string filePath)
 	return buffer.str();
 }
 
-void ShaderProgram::loadVertexShader(std::string filePath)
+void ShaderFile::compile()
 {
-	vertexFileName = filePath;
-	vertexShaderSrc = readShaderFile(filePath);
-}
-void ShaderProgram::loadFragmentShader(std::string filePath)
-{
-	fragFileName = filePath;
-	fragShaderSrc = readShaderFile(filePath);
-}
-void ShaderProgram::compileShader(const char* src, GLuint shaderID, std::string filePath)
-{
+	const char* src = srcStr.c_str();
 	glShaderSource(shaderID, 1, &src, NULL);
 	glCompileShader(shaderID);
 	GLint compile_ok = GL_FALSE;
 	glGetShaderiv(shaderID, GL_COMPILE_STATUS, &compile_ok);
 	if (!compile_ok)
 	{
-		printf(("Shader error in: " + filePath + "\n").c_str());
+		printf(("Shader error in: " + fileName + "\n").c_str());
 		printShaderError(shaderID);
 		glDeleteShader(shaderID);
 	}
 	/*else
 		printf((filePath + " compiled OK.\n").c_str());*/
 }
+
+
+ShaderProgram::~ShaderProgram()
+{
+	for (size_t i = 0; i < files.size(); i++)
+	{
+		delete files[i];
+	}
+	release();
+}
+void ShaderProgram::loadShader(std::string filePath, GLenum shaderType)
+{
+	ShaderFile* shaderFile = new ShaderFile(filePath, shaderType);
+	files.push_back(shaderFile);
+}
 void ShaderProgram::compileProgram()
 {
-	fragShaderID = glCreateShader(GL_FRAGMENT_SHADER);
-	compileShader(fragShaderSrc.c_str(), fragShaderID, fragFileName);
-
-	vertexShaderID = glCreateShader(GL_VERTEX_SHADER);
-	compileShader(vertexShaderSrc.c_str(), vertexShaderID, vertexFileName);
+	for (size_t i = 0; i < files.size(); i++)
+	{
+		files[i]->setID(glCreateShader(files[i]->getShaderType()));
+		files[i]->compile();
+	}
 
 	programID = glCreateProgram();
-	glAttachShader(programID, vertexShaderID);
-	glAttachShader(programID, fragShaderID);
+	for (size_t i = 0; i < files.size(); i++)
+	{
+		glAttachShader(programID, files[i]->getShaderID());
+	}
 	glLinkProgram(programID);
 
-	// We can delete the shaders after they're compiled and linked
-	glDeleteShader(vertexShaderID);
-	glDeleteShader(fragShaderID);
+	// We then can delete the shaders, must be detached for deletion
+	for (size_t i = 0; i < files.size(); i++)
+	{
+		glDetachShader(programID, files[i]->getShaderID());
+		glDeleteShader(files[i]->getShaderID());
+	}
 	 
 	GLint link_ok = GL_FALSE;
 	glGetProgramiv(programID, GL_LINK_STATUS, &link_ok);
@@ -70,33 +109,12 @@ void ShaderProgram::compileProgram()
 	//	printf("Shader linked OK.\n");
 }
 
-void ShaderProgram::printShaderError(GLuint shaderID)
-{
-	GLint logSize = 0;
-	glGetShaderiv(shaderID, GL_INFO_LOG_LENGTH, &logSize);
-	GLchar* data = new GLchar[logSize];
-	glGetShaderInfoLog(shaderID, logSize, &logSize, data);
-	printf(data);
-	printf("\n");
-	delete[] data;
-
-}
-void ShaderProgram::printLinkerError(GLuint programID)
-{
-	GLint logSize = 0;
-	glGetProgramiv(programID, GL_INFO_LOG_LENGTH, &logSize);
-	GLchar* data = new GLchar[logSize];
-	glGetProgramInfoLog(programID, logSize, &logSize, data);
-	printf(data);
-	printf("\n");
-	delete[] data;
-}
-
 void ShaderProgram::release()
 {
-	glDetachShader(programID, vertexShaderID);
-	glDetachShader(programID, fragShaderID);
-	glDeleteShader(vertexShaderID);
-	glDeleteShader(fragShaderID);
+	for (size_t i = 0; i < files.size(); i++)
+	{
+		glDetachShader(programID, files[i]->getShaderID());
+		glDeleteShader(files[i]->getShaderID());
+	}
 	glDeleteProgram(programID);
 }

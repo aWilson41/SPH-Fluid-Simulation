@@ -12,8 +12,28 @@ namespace Shaders
 	ShaderProgram* loadVSFSShader(std::string shaderName, std::string vsPath, std::string fsPath)
 	{
 		ShaderProgram* shader = new ShaderProgram(shaderName);
-		shader->loadVertexShader(vsPath);
-		shader->loadFragmentShader(fsPath);
+		shader->loadShader(vsPath, GL_VERTEX_SHADER);
+		shader->loadShader(fsPath, GL_FRAGMENT_SHADER);
+		shader->compileProgram();
+		shaderCache.push_back(shader);
+		return shader;
+	}
+
+	ShaderProgram* loadComputeShader(std::string shaderName, std::string path)
+	{
+		ShaderProgram* shader = new ShaderProgram(shaderName);
+		shader->loadShader(path, GL_COMPUTE_SHADER);
+		shader->compileProgram();
+		shaderCache.push_back(shader);
+		return shader;
+	}
+	ShaderProgram* loadComputeShader(std::string shaderName, std::vector<std::string> paths)
+	{
+		ShaderProgram* shader = new ShaderProgram(shaderName);
+		for (UINT i = 0; i < paths.size(); i++)
+		{
+			shader->loadShader(paths[i], GL_COMPUTE_SHADER);
+		}
 		shader->compileProgram();
 		shaderCache.push_back(shader);
 		return shader;

@@ -12,6 +12,8 @@ namespace Shaders
 	//extern ShaderProgram* getShader(std::string name);
 
 	extern ShaderProgram* loadVSFSShader(std::string shaderName, std::string vsPath, std::string fsPath);
+	extern ShaderProgram* loadComputeShader(std::string shaderName, std::string path);
+	extern ShaderProgram* loadComputeShader(std::string shaderName, std::vector<std::string> paths);
 
 	extern ShaderProgram* getShader(Renderer* ren, std::string mapperName, ShaderProperties* properties);
 

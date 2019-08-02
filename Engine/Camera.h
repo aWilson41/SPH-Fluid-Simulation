@@ -1,5 +1,6 @@
 #pragma once
 #include "MathHelper.h"
+#include "Geometry3D.h"
 
 class Camera
 {
@@ -41,6 +42,13 @@ public:
 	void setFocalPt(GLfloat x, GLfloat y, GLfloat z) { setFocalPt(glm::vec3(x, y, z)); }
 	void updateLookAt() { view = glm::lookAt(eyePos, focalPt, up); }
 
+	geom3d::Ray getEyeRay(glm::vec2 ndc)
+	{
+		glm::vec4 worldPos = glm::inverse(proj * view) * glm::vec4(ndc, 0.0f, 1.0f);
+		return geom3d::Ray(eyePos, glm::normalize(glm::vec3(worldPos) / worldPos.w - eyePos));
+	}
+	geom3d::Ray getEyeRay(GLfloat x, GLfloat y) { return getEyeRay(glm::vec2(x, y)); }
+
 	glm::vec3 getEyePos() { return eyePos; }
 	glm::vec3 getFocalPt() { return focalPt; }
 	glm::vec3 getUp() { return up; }
@@ -56,6 +64,7 @@ public:
 	glm::vec3 focalPt = glm::vec3(0.0f);
 	// Up
 	glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+
 	// Camera specs
 	GLfloat fov = 45.0f;
 	GLfloat aspectRatio = 16.0f / 9.0f;

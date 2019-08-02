@@ -53,6 +53,24 @@ glm::mat4 MathHelp::matrixScale(GLfloat x, GLfloat y, GLfloat z)
 }
 glm::mat4 MathHelp::matrixScale(GLfloat s) { return matrixScale(s, s, s); }
 
+glm::mat3 MathHelp::skewSym(glm::vec3 a) // ?
+{
+	glm::mat3 m;
+	m[0][0] = 0.0f; m[0][1] = -a.z; m[0][2] = a.y;
+	m[1][0] = a.z;  m[1][1] = 0.0f; m[1][2] = -a.x;
+	m[2][0] = -a.y; m[2][1] = a.x;  m[2][2] = 0.0f;
+	return m;
+}
+
+glm::mat3 MathHelp::rotateVectorToVector(glm::vec3 a, glm::vec3 b)
+{
+	glm::vec3 v = glm::cross(a, b);
+	GLfloat s = glm::length(v);
+	GLfloat c = glm::dot(a, b);
+	glm::mat3 ss = skewSym(v);
+	return glm::mat3(1.0f) + ss + ss * ss * (1 - c) / (s * s);
+}
+
 // We define the 2d cross product as the length of the 3d ax * by - ay * bx
 GLfloat MathHelp::cross(glm::vec2 a, glm::vec2 b) { return a.x * b.y - a.y * b.x; }
 
