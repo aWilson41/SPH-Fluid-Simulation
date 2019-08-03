@@ -17,10 +17,13 @@ DeferredRenderer::DeferredRenderer(bool useDefaults)
 		GeometryPass* geomPass = new GeometryPass();
 		LightingPass* lightPass = new LightingPass();
 
-		geomPass->setNextPass(lightPass);
+		lightPass->setPosInput(geomPass->getPosOutput());
+		lightPass->setNormalInput(geomPass->getNormalOutput());
+		lightPass->setDiffuseInput(geomPass->getDiffuseOutput());
+		lightPass->setAmbientInput(geomPass->getAmbientOutput());
 
-		renderPasses.push_back(geomPass);
-		renderPasses.push_back(lightPass);
+		addPass(geomPass);
+		addPass(lightPass);
 	}
 }
 
@@ -35,10 +38,28 @@ DeferredRenderer::~DeferredRenderer()
 
 void DeferredRenderer::render()
 {
-	if (renderPasses.size() != 0)
-		renderPasses[0]->render(this);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	// Always blit the last pass into the default
+	// Execute all the render passses
+	for (UINT i = 0; i < renderPasses.size(); i++)
+	{
+		renderPasses[i]->render(this);
+	}
+
+	// Blit the results to the default fbo
+	//printf("Blitting color from fbo %d to 0\n", colorFboID);
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, colorFboID);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+	glBlitFramebuffer(0, 0, defaultFboWidth, defaultFboHeight, 0, 0, defaultFboWidth, defaultFboHeight, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+	//printf("Blitting depth from fbo %d to 0\n", depthFboID);
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, depthFboID);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+	glBlitFramebuffer(0, 0, defaultFboWidth, defaultFboHeight, 0, 0, defaultFboWidth, defaultFboHeight, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void DeferredRenderer::pass()
@@ -65,6 +86,7 @@ void DeferredRenderer::resizeFramebuffer(int width, int height)
 {
 	Renderer::resizeFramebuffer(width, height);
 
+	// Recursively resize framebuffers
 	for (UINT i = 0; i < renderPasses.size(); i++)
 	{
 		renderPasses[i]->resizeFramebuffer(width, height);

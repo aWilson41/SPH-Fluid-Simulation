@@ -1,11 +1,12 @@
 #include "LightingPass.h"
 #include "DeferredRenderer.h"
 #include "Shaders.h"
-#include <string>
 
-LightingPass::LightingPass()
+LightingPass::LightingPass() : RenderPass("Lighting Pass")
 {
-	shader = Shaders::loadVSFSShader("Lighting_Pass", "Shaders/DeferredRasterize/Passes/lightPassVS.glsl", "Shaders/DeferredRasterize/Passes/lightPassFS.glsl");
+	shader = Shaders::loadVSFSShader("Lighting_Pass",
+		"Shaders/DeferredRasterize/Passes/lightPassVS.glsl",
+		"Shaders/DeferredRasterize/Passes/lightPassFS.glsl");
 	GLuint shaderID = shader->getProgramID();
 	glUseProgram(shaderID);
 	glUniform1i(glGetUniformLocation(shaderID, "gPosition"), 0);
@@ -13,6 +14,9 @@ LightingPass::LightingPass()
 	glUniform1i(glGetUniformLocation(shaderID, "gDiffuseColor"), 2);
 	glUniform1i(glGetUniformLocation(shaderID, "gAmbientColor"), 3);
 	glUseProgram(0);
+
+	setNumberOfInputPorts(4);
+	setNumberOfOutputPorts(1);
 }
 
 LightingPass::~LightingPass()
@@ -30,7 +34,7 @@ void LightingPass::render(DeferredRenderer* ren)
 {
 	// Use the default fbo to do the lighting pass
 	glBindFramebuffer(GL_FRAMEBUFFER, fboID);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glClear(GL_DEPTH_BUFFER_BIT);
 
 	GLuint shaderID = shader->getProgramID();
 	glUseProgram(shaderID);
@@ -40,14 +44,22 @@ void LightingPass::render(DeferredRenderer* ren)
 	if (lightDirLocation != -1)
 		glUniform3fv(lightDirLocation, 1, &ren->getLightDir()[0]);
 
+	// Bind the textures from the last pass
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, *inputs[0]);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, *inputs[1]);
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, *inputs[2]);
+	glActiveTexture(GL_TEXTURE3);
+	glBindTexture(GL_TEXTURE_2D, *inputs[3]);
+
 	ren->quadPass();
 
-	executeNextPass(ren);
+	// Set this as the color buffer to use
+	ren->setColorFboID(fboID);
 
-	// Copy the results to the default fbo
-	glBindFramebuffer(GL_READ_FRAMEBUFFER, fboID);
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-	glBlitFramebuffer(0, 0, fboWidth, fboHeight, 0, 0, fboWidth, fboHeight, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+	// Return to the default fbo
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
@@ -68,6 +80,7 @@ void LightingPass::resizeFramebuffer(int width, int height)
 
 	glGenFramebuffers(1, &fboID);
 	glBindFramebuffer(GL_FRAMEBUFFER, fboID);
+	//printf("Created lighting pass fbo %d\n", fboID);
 
 	// Setup the diffuse color buffer
 	glGenTextures(1, &colorTexID);
@@ -92,4 +105,6 @@ void LightingPass::resizeFramebuffer(int width, int height)
 
 	// Back to the default fbo
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	outputs[0] = colorTexID;
 }

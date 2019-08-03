@@ -1,16 +1,23 @@
 #include "UnsharpMaskingPass.h"
+#include "Camera.h"
 #include "DeferredRenderer.h"
 #include "Shaders.h"
 #include <string>
 
-UnsharpMaskingPass::UnsharpMaskingPass()
+UnsharpMaskingPass::UnsharpMaskingPass() : RenderPass("Unsharp Masking Pass")
 {
-	shader = Shaders::loadVSFSShader("Lighting_Pass", "Shaders/DeferredRasterize/UnsharpMaskingPass/unsharpMaskingPassVS.glsl", "Shaders/DeferredRasterize/LightingPass/UnsharpMaskingPass.glsl");
+	shader = Shaders::loadVSFSShader("Unsharp_Masking_Pass",
+		"Shaders/DeferredRasterize/Passes/unsharpMaskingPassVS.glsl",
+		"Shaders/DeferredRasterize/Passes/unsharpMaskingPassFS.glsl");
 	GLuint shaderID = shader->getProgramID();
 	glUseProgram(shaderID);
-	glUniform1i(glGetUniformLocation(shaderID, "colorTex"), 0);
-	glUniform1i(glGetUniformLocation(shaderID, "depthTex"), 1);
+	glUniform1i(glGetUniformLocation(shaderID, "gColor"), 0);
+	glUniform1i(glGetUniformLocation(shaderID, "gDepth"), 1);
 	glUseProgram(0);
+
+	// Takes color and depth input and outputs color and depth
+	setNumberOfInputPorts(2);
+	setNumberOfOutputPorts(1);
 }
 
 UnsharpMaskingPass::~UnsharpMaskingPass()
@@ -27,26 +34,42 @@ UnsharpMaskingPass::~UnsharpMaskingPass()
 void UnsharpMaskingPass::render(DeferredRenderer* ren)
 {
 	// Use the default fbo to do the lighting pass
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glBindFramebuffer(GL_FRAMEBUFFER, fboID);
+	glClear(GL_DEPTH_BUFFER_BIT);
 
 	GLuint shaderID = shader->getProgramID();
 	glUseProgram(shaderID);
 
+	// Set some uniforms
+	GLuint blurRadiusLocation = glGetUniformLocation(shaderID, "blurRadius");
+	if (blurRadiusLocation != -1) // 3% of the diagonal (paper cites 2%-5%)
+		glUniform1i(blurRadiusLocation, sqrt(fboWidth * fboHeight + fboWidth * fboHeight) * 0.01);
+	/*GLuint pixelScaleLocation = glGetUniformLocation(shaderID, "pixelScale");
+	if (pixelScaleLocation != -1)
+		glUniform2f(pixelScaleLocation, 1.0f, 1.0f);*/
+	GLuint darknessFactorLocation = glGetUniformLocation(shaderID, "darknessFactor");
+	if (darknessFactorLocation != -1)
+		glUniform1f(darknessFactorLocation, 1000.0f);
+	/*GLuint nearZLocation = glGetUniformLocation(shaderID, "nearZ");
+	if (nearZLocation != -1)
+		glUniform1f(nearZLocation, ren->getCamera()->nearZ);
+	GLuint farZLocation = glGetUniformLocation(shaderID, "farZ");
+	if (farZLocation != -1)
+		glUniform1f(farZLocation, ren->getCamera()->farZ);*/
+
+
 	// Bind the color and depth buffer
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, colorTexID);
+	glBindTexture(GL_TEXTURE_2D, *inputs[0]);
 	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, depthBufferID);
+	glBindTexture(GL_TEXTURE_2D, *inputs[1]);
 
 	ren->quadPass();
 
-	executeNextPass(ren);
+	// Set this as the color buffer to use
+	ren->setColorFboID(fboID);
 
-	// Copy the results to the default fbo
-	glBindFramebuffer(GL_READ_FRAMEBUFFER, fboID);
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-	glBlitFramebuffer(0, 0, fboWidth, fboHeight, 0, 0, fboWidth, fboHeight, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+	// Return to the default fbo
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
@@ -67,7 +90,7 @@ void UnsharpMaskingPass::resizeFramebuffer(int width, int height)
 	glGenFramebuffers(1, &fboID);
 	glBindFramebuffer(GL_FRAMEBUFFER, fboID);
 
-	// Setup the diffuse color buffer
+	// Setup the color buffer
 	glGenTextures(1, &colorTexID);
 	glBindTexture(GL_TEXTURE_2D, colorTexID);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
@@ -90,4 +113,6 @@ void UnsharpMaskingPass::resizeFramebuffer(int width, int height)
 
 	// Back to the default fbo
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	outputs[0] = colorTexID;
 }

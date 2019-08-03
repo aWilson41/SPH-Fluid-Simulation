@@ -1,19 +1,24 @@
 #include "GeometryPass.h"
 #include "DeferredRenderer.h"
 #include "Shaders.h"
-#include <string>
+
+GeometryPass::GeometryPass() : RenderPass("Geometry Pass")
+{
+	setNumberOfInputPorts(0);
+	setNumberOfOutputPorts(5);
+}
 
 GeometryPass::~GeometryPass()
 {
-	if (gBufferID != -1)
+	if (fboID != -1)
 	{
-		glDeleteFramebuffers(1, &gBufferID);
+		glDeleteFramebuffers(1, &fboID);
 		// Delete it's attachments/textures too
 		glDeleteTextures(1, &gPosTexID);
 		glDeleteTextures(1, &gNormalTexID);
 		glDeleteTextures(1, &gDiffuseColorTexID);
 		glDeleteTextures(1, &gAmbientColorTexID);
-		glDeleteRenderbuffers(1, &gDepthBufferID);
+		glDeleteTextures(1, &gDepthTexID);
 	}
 }
 
@@ -21,29 +26,27 @@ void GeometryPass::render(DeferredRenderer* ren)
 {
 	// Using a different set of shaders we render to a framebuffer with channels for various properties
 	// Then finish the render in passes
-	glBindFramebuffer(GL_FRAMEBUFFER, gBufferID);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glBindFramebuffer(GL_FRAMEBUFFER, fboID);
+
+	glClearTexImage(gPosTexID, 0, GL_RGB, GL_FLOAT, 0);
+	glClearTexImage(gNormalTexID, 0, GL_RGB, GL_FLOAT, 0);
+	static GLubyte diffuseClearColor[4] = { 0, 0, 0, 255 };
+	glClearTexImage(gDiffuseColorTexID, 0, GL_RGBA, GL_UNSIGNED_BYTE, diffuseClearColor);
+	float* clearColor = ren->getClearColor();
+	static GLubyte ambientClearColor[4] = {
+		static_cast<double>(clearColor[0]) * 255.0, 
+		static_cast<double>(clearColor[1]) * 255.0,
+		static_cast<double>(clearColor[2]) * 255.0,
+		static_cast<double>(clearColor[3]) * 255.0 };
+	glClearTexImage(gAmbientColorTexID, 0, GL_RGBA, GL_UNSIGNED_BYTE, ambientClearColor);
+	static float depthClearValue = 1.0f;
+	glClearTexImage(gDepthTexID, 0, GL_DEPTH_COMPONENT, GL_FLOAT, &depthClearValue);
 
 	ren->pass();
 
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	ren->setDepthFboID(fboID);
 
-	// Bind the textures from the fbo for the next pass
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, gPosTexID);
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, gNormalTexID);
-	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, gDiffuseColorTexID);
-	glActiveTexture(GL_TEXTURE3);
-	glBindTexture(GL_TEXTURE_2D, gAmbientColorTexID);
-
-	executeNextPass(ren);
-
-	// Copy the gbuffers depth buffer to the default for possible further forward rendering
-	glBindFramebuffer(GL_READ_FRAMEBUFFER, gBufferID); // Read from gbuffer
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0); // Write to the default
-	glBlitFramebuffer(0, 0, fboWidth, fboHeight, 0, 0, fboWidth, fboHeight, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+	// Return to the default fbo
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
@@ -53,19 +56,20 @@ void GeometryPass::resizeFramebuffer(int width, int height)
 
 	// Setup the framebuffer
 	// Delete the framebuffer if it exists and create a new one
-	if (gBufferID != -1)
+	if (fboID != -1)
 	{
-		glDeleteFramebuffers(1, &gBufferID);
+		glDeleteFramebuffers(1, &fboID);
 		// Delete it's attachments/textures too
 		glDeleteTextures(1, &gPosTexID);
 		glDeleteTextures(1, &gNormalTexID);
 		glDeleteTextures(1, &gDiffuseColorTexID);
 		glDeleteTextures(1, &gAmbientColorTexID);
-		glDeleteRenderbuffers(1, &gDepthBufferID);
+		glDeleteTextures(1, &gDepthTexID);
 	}
 
-	glGenFramebuffers(1, &gBufferID);
-	glBindFramebuffer(GL_FRAMEBUFFER, gBufferID);
+	glGenFramebuffers(1, &fboID);
+	glBindFramebuffer(GL_FRAMEBUFFER, fboID);
+	//printf("Created geometry pass fbo %d\n", fboID);
 
 	// Setup the position buffer
 	glGenTextures(1, &gPosTexID);
@@ -104,14 +108,22 @@ void GeometryPass::resizeFramebuffer(int width, int height)
 	glDrawBuffers(4, attachments);
 
 	// Create and attach the depth buffer
-	glGenRenderbuffers(1, &gDepthBufferID);
-	glBindRenderbuffer(GL_RENDERBUFFER, gDepthBufferID);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, gDepthBufferID);
+	glGenTextures(1, &gDepthTexID);
+	glBindTexture(GL_TEXTURE_2D, gDepthTexID);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, gDepthTexID, 0);
 
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 		printf("Error: Framebuffer incomplete\n");
 
 	// Back to the default fbo
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	outputs[0] = gPosTexID;
+	outputs[1] = gNormalTexID;
+	outputs[2] = gDiffuseColorTexID;
+	outputs[3] = gAmbientColorTexID;
+	outputs[4] = gDepthTexID;
 }

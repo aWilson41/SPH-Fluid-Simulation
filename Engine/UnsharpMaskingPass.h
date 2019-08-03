@@ -14,13 +14,15 @@ public:
 	~UnsharpMaskingPass();
 
 public:
-	void render(DeferredRenderer* ren) override;
+	void setColorInput(GLuint* colorInput) { setInput(0, colorInput); }
+	void setDepthInput(GLuint* depthInput) { setInput(1, depthInput); }
 
+public:
+	void render(DeferredRenderer* ren) override;
 	void resizeFramebuffer(int width, int height) override;
 
 private:
-	GLuint fboID = -1;
+	ShaderProgram* shader = nullptr;
 	GLuint colorTexID = -1;
 	GLuint depthBufferID = -1;
-	ShaderProgram* shader = nullptr;
 };

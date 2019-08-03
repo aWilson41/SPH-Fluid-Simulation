@@ -16,12 +16,12 @@ public:
 public:
 	std::vector<SPHParticle> particles;
 
-	glm::vec3 origin;
-	glm::vec3 size;
+	glm::vec3 origin = glm::vec3(0.0f);
+	glm::vec3 size = glm::vec3(0.0f);
 	GLfloat bounds[6] = { -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f };
 
 	GLfloat bufferBounds[6] = { -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f };
-	glm::vec3 bufferSize;
+	glm::vec3 bufferSize = glm::vec3(0.0f);
 	int gridWidth = -1;
 	int gridHeight = -1;
 	int gridDepth = -1;
