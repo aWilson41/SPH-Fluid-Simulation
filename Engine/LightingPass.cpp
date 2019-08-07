@@ -5,7 +5,7 @@
 LightingPass::LightingPass() : RenderPass("Lighting Pass")
 {
 	shader = Shaders::loadVSFSShader("Lighting_Pass",
-		"Shaders/DeferredRasterize/Passes/lightPassVS.glsl",
+		"Shaders/DeferredRasterize/Passes/quadVS.glsl",
 		"Shaders/DeferredRasterize/Passes/lightPassFS.glsl");
 	GLuint shaderID = shader->getProgramID();
 	glUseProgram(shaderID);

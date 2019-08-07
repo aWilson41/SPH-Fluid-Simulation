@@ -5,7 +5,7 @@ layout(binding = 0) uniform sampler2D gColor;
 layout(binding = 1) uniform sampler2D gDepth;
 
 uniform int blurRadius;
-//uniform float pixelScale[2];
+uniform float sigma;
 uniform float darknessFactor;
 uniform float nearZ;
 uniform float farZ;
@@ -32,7 +32,6 @@ void main()
         //float sigma = 2.0f * blurRadius * blurRadius;
         //float currentDepth;//, dist, gauss;
         //vec2 pos;
-        float sigma = blurRadius;
         float s = 2.0f * sigma * sigma;
         float weight = 0.0f;
         float sum = 0.0f;

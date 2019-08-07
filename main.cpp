@@ -11,7 +11,7 @@
 
 #include "Engine/GeometryPass.h"
 #include "Engine/LightingPass.h"
-#include "Engine/UnsharpMaskingPass.h"
+#include "Engine/BilateralDepthBlurPass.h"
 
 int main(int argc, char *argv[])
 {
@@ -43,13 +43,12 @@ int main(int argc, char *argv[])
 	lightPass->setDiffuseInput(geomPass->getDiffuseOutput());
 	lightPass->setAmbientInput(geomPass->getAmbientOutput());
 
-	UnsharpMaskingPass* aoPass = new UnsharpMaskingPass();
-	aoPass->setColorInput(lightPass->getColorOutput());
-	aoPass->setDepthInput(geomPass->getDepthOutput());
+	BilateralDepthBlurPass* depthBlurPass = new BilateralDepthBlurPass();
+	depthBlurPass->setDepthInput(geomPass->getDepthOutput());
 
 	ren.addPass(geomPass);
 	ren.addPass(lightPass);
-	ren.addPass(aoPass);
+	ren.addPass(depthBlurPass);
 
 	renWindow.setRenderer(&ren);
 
@@ -61,14 +60,14 @@ int main(int argc, char *argv[])
 	ren.addRenderItem(iren.getParticleMapper());
 
 	// Setup a ground plane
-	/*PlaneSource planeSource;
+	PlaneSource planeSource;
 	planeSource.update();
 	PolyDataMapper planeMapper;
 	planeMapper.setInput(planeSource.getOutput());
 	planeMapper.setMaterial(ren.getMaterial(0));
 	planeMapper.setModelMatrix(MathHelp::matrixScale(5.0f, 1.0f, 5.0f));
 	planeMapper.update();
-	ren.addRenderItem(&planeMapper);*/
+	ren.addRenderItem(&planeMapper);
 
 	// Update loop
 	while (renWindow.isActive())

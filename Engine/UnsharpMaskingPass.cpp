@@ -7,7 +7,7 @@
 UnsharpMaskingPass::UnsharpMaskingPass() : RenderPass("Unsharp Masking Pass")
 {
 	shader = Shaders::loadVSFSShader("Unsharp_Masking_Pass",
-		"Shaders/DeferredRasterize/Passes/unsharpMaskingPassVS.glsl",
+		"Shaders/DeferredRasterize/Passes/quadVS.glsl",
 		"Shaders/DeferredRasterize/Passes/unsharpMaskingPassFS.glsl");
 	GLuint shaderID = shader->getProgramID();
 	glUseProgram(shaderID);
@@ -43,20 +43,22 @@ void UnsharpMaskingPass::render(DeferredRenderer* ren)
 	// Set some uniforms
 	GLuint blurRadiusLocation = glGetUniformLocation(shaderID, "blurRadius");
 	if (blurRadiusLocation != -1) // 3% of the diagonal (paper cites 2%-5%)
-		glUniform1i(blurRadiusLocation, sqrt(fboWidth * fboHeight + fboWidth * fboHeight) * 0.01);
-	/*GLuint pixelScaleLocation = glGetUniformLocation(shaderID, "pixelScale");
-	if (pixelScaleLocation != -1)
-		glUniform2f(pixelScaleLocation, 1.0f, 1.0f);*/
+	{
+		if (radiusRatio != -1.0f)
+			radius = static_cast<GLuint>(sqrt(fboWidth * fboHeight + fboWidth * fboHeight) * radiusRatio);
+		glUniform1i(blurRadiusLocation, radius);
+	}
 	GLuint darknessFactorLocation = glGetUniformLocation(shaderID, "darknessFactor");
 	if (darknessFactorLocation != -1)
-		glUniform1f(darknessFactorLocation, 1000.0f);
-	/*GLuint nearZLocation = glGetUniformLocation(shaderID, "nearZ");
-	if (nearZLocation != -1)
-		glUniform1f(nearZLocation, ren->getCamera()->nearZ);
-	GLuint farZLocation = glGetUniformLocation(shaderID, "farZ");
-	if (farZLocation != -1)
-		glUniform1f(farZLocation, ren->getCamera()->farZ);*/
-
+		glUniform1f(darknessFactorLocation, darknessFactor);
+	GLuint sigmaLocation = glGetUniformLocation(shaderID, "sigma");
+	if (sigmaLocation != -1)
+	{
+		if (sigma == -1.0f)
+			glUniform1f(sigmaLocation, static_cast<GLfloat>(radius));
+		else
+			glUniform1f(sigmaLocation, sigma);
+	}
 
 	// Bind the color and depth buffer
 	glActiveTexture(GL_TEXTURE0);

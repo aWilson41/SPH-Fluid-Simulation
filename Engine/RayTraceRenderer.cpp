@@ -143,7 +143,7 @@ void RayTraceRenderer::bindRenderUniforms(GLuint shaderID)
 		printf("Failed to find a renderer uniform\n");
 		return;
 	}
-	glUniform1f(timeLocation, (std::chrono::system_clock::now() - start).count());
+	glUniform1f(timeLocation, static_cast<GLfloat>((std::chrono::system_clock::now() - start).count()));
 	// If the camera direciton has changed flush the render
 	if (prevEyeRayDir.x != currEyeRayDir.x || prevEyeRayDir.y != currEyeRayDir.y || prevEyeRayDir.z != currEyeRayDir.z)
 	{

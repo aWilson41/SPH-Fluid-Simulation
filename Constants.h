@@ -11,7 +11,7 @@ static const GLuint NUMFRAMES = 500;
 //#define IISPH
 
 static const GLuint FPS = 60;
-static const GLuint SUBSTEPS = 5; // Increase the substeps as particle size decreases
+static const GLuint SUBSTEPS = 7; // Increase the substeps as particle size decreases
 static const GLfloat TIMESCALE = 1.0f;
 static const GLfloat TIMESTEP = TIMESCALE / (FPS * SUBSTEPS);
 
