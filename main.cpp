@@ -12,6 +12,7 @@
 #include "Engine/GeometryPass.h"
 #include "Engine/LightingPass.h"
 #include "Engine/BilateralDepthBlurPass.h"
+#include "Engine/BilateralRgbBlurPass.h"
 
 int main(int argc, char *argv[])
 {
