@@ -12,7 +12,7 @@
 #include "Engine/GeometryPass.h"
 #include "Engine/LightingPass.h"
 #include "Engine/BilateralDepthBlurPass.h"
-#include "Engine/BilateralRgbBlurPass.h"
+#include "Engine/DepthNormalsPass.h"
 
 int main(int argc, char *argv[])
 {
@@ -47,9 +47,13 @@ int main(int argc, char *argv[])
 	BilateralDepthBlurPass* depthBlurPass = new BilateralDepthBlurPass();
 	depthBlurPass->setDepthInput(geomPass->getDepthOutput());
 
+	DepthNormalsPass* depthNormalsPass = new DepthNormalsPass();
+	depthNormalsPass->setDepthInput(depthBlurPass->getDepthOutput());
+
 	ren.addPass(geomPass);
 	ren.addPass(lightPass);
 	ren.addPass(depthBlurPass);
+	ren.addPass(depthNormalsPass);
 
 	renWindow.setRenderer(&ren);
 

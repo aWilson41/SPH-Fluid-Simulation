@@ -27,23 +27,22 @@ void main()
 {
     // read eye-space depth from texture
 	float depth = texture(depthTex, texCoord).r;
-
 	if (depth > maxDepth)
-	{
 		discard;
-		return;
-	}
-	// Calculate eye-space position from depth
-	vec3 posEye = uvToEye(texCoord, depth);
 
-	// Calculate differences
-	vec3 ddx = getEyePos(texCoord + vec2(texelSize.x, 0)) - posEye;
-	vec3 ddx2 = posEye - getEyePos(texCoord + vec2(-texelSize.x, 0));
+	// Calculate the position of this fragment (view space)
+	vec3 pos = uvToEye(texCoord, depth);
+
+	// Compute surface tangents
+	// Compute left and right depth
+	vec3 ddx = getEyePos(texCoord + vec2(texelSize.x, 0)) - pos;
+	vec3 ddx2 = pos - getEyePos(texCoord - vec2(texelSize.x, 0));
+	// Use the smaller one as it's closest
 	if (abs(ddx.z) > abs(ddx2.z))
 		ddx = ddx2;
 
-	vec3 ddy = getEyePos(texCoord[0] + vec2(0, texelSize.y)) - posEye;
-	vec3 ddy2 = posEye - getEyePos(texCoord + vec2(0, -texelSize.y));
+	vec3 ddy = getEyePos(texCoord + vec2(0, texelSize.y)) - pos;
+	vec3 ddy2 = pos - getEyePos(texCoord - vec2(0, texelSize.y));
 	if (abs(ddy2.z) < abs(ddy.z))
 		ddy = ddy2;
 

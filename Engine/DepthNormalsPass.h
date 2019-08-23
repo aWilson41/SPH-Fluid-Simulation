@@ -3,16 +3,18 @@
 
 class ShaderProgram;
 
-class NormalsFromDepthPass : public RenderPass
+class DepthNormalsPass : public RenderPass
 {
 public:
-	NormalsFromDepthPass();
-	~NormalsFromDepthPass();
+	DepthNormalsPass();
+	~DepthNormalsPass();
 
 public:
 	void setDepthInput(GLuint* depthInput) { setInput(0, depthInput); }
 
 	GLuint* getNormalOutput() { return &normalTexID; }
+
+	void setMaxDepth(GLfloat maxDepth) { DepthNormalsPass::maxDepth = maxDepth; }
 
 public:
 	void render(DeferredRenderer* ren) override;
@@ -21,4 +23,6 @@ public:
 private:
 	ShaderProgram* shader = nullptr;
 	GLuint normalTexID = -1;
+
+	GLfloat maxDepth = 0.999f;
 };

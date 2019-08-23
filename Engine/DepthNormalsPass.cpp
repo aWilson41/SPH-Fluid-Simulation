@@ -1,10 +1,10 @@
-#include "NormalsFromDepthPass.h"
+#include "DepthNormalsPass.h"
 #include "Camera.h"
 #include "DeferredRenderer.h"
 #include "Shaders.h"
 #include <string>
 
-NormalsFromDepthPass::NormalsFromDepthPass() : RenderPass("Normals From Depth Pass")
+DepthNormalsPass::DepthNormalsPass() : RenderPass("Normals From Depth Pass")
 {
 	shader = Shaders::loadVSFSShader("Bilateral_Rgb_Blur_Pass",
 		"Shaders/DeferredRasterize/Passes/quadVS.glsl",
@@ -19,7 +19,7 @@ NormalsFromDepthPass::NormalsFromDepthPass() : RenderPass("Normals From Depth Pa
 	setNumberOfOutputPorts(1);
 }
 
-NormalsFromDepthPass::~NormalsFromDepthPass()
+DepthNormalsPass::~DepthNormalsPass()
 {
 	if (fboID != -1)
 	{
@@ -29,7 +29,7 @@ NormalsFromDepthPass::~NormalsFromDepthPass()
 	}
 }
 
-void NormalsFromDepthPass::render(DeferredRenderer* ren)
+void DepthNormalsPass::render(DeferredRenderer* ren)
 {
 	// Use the default fbo to do the lighting pass
 	glBindFramebuffer(GL_FRAMEBUFFER, fboID);
@@ -37,6 +37,20 @@ void NormalsFromDepthPass::render(DeferredRenderer* ren)
 
 	GLuint shaderID = shader->getProgramID();
 	glUseProgram(shaderID);
+
+	// Set some uniforms
+	GLuint maxDepthLocation = glGetUniformLocation(shaderID, "maxDepth");
+	if (maxDepthLocation != -1)
+		glUniform1f(maxDepthLocation, maxDepth);
+	GLuint invProjLocation = glGetUniformLocation(shaderID, "invProj");
+	if (invProjLocation != -1)
+	{
+		glm::mat4 invProj = glm::inverse(ren->getCamera()->proj);
+		glUniformMatrix4fv(invProjLocation, 1, GL_FALSE, &invProj[0][0]);
+	}
+	GLuint texelSizeLocation = glGetUniformLocation(shaderID, "texelSize");
+	if (texelSizeLocation != -1)
+		glUniform2f(texelSizeLocation, 1.0f / fboWidth, 1.0f / fboHeight);
 
 	// Bind the color and depth buffer
 	glActiveTexture(GL_TEXTURE0);
@@ -51,7 +65,7 @@ void NormalsFromDepthPass::render(DeferredRenderer* ren)
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void NormalsFromDepthPass::resizeFramebuffer(int width, int height)
+void DepthNormalsPass::resizeFramebuffer(int width, int height)
 {
 	setPassDim(width, height);
 
