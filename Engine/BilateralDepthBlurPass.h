@@ -15,10 +15,9 @@ public:
 	GLuint* getDepthOutput() { return &depthTexID; }
 
 	// Area of effect (radius for the blur)
-	void setRadius(GLfloat radius) { blurRadius = radius; }
-	void setScale(GLfloat scale) { blurScale = scale; }
-	void setFalloff(GLfloat falloff) { blurDepthFalloff = falloff; }
-	void setBlurDir(glm::vec2 direction) { blurDir = direction; }
+	void setRadius(GLuint radius) { blurRadius = radius; }
+	void SetSigmaI(GLfloat sigma) { sigmaI = sigma; }
+	void SetSigmaS(GLfloat sigma) { sigmaS = sigma; }
 
 public:
 	void render(DeferredRenderer* ren) override;
@@ -28,8 +27,7 @@ private:
 	ShaderProgram* shader = nullptr;
 	GLuint depthTexID = -1;
 
-	GLfloat blurRadius = 10.0f;
-	GLfloat blurScale = 1.0f;
-	GLfloat blurDepthFalloff = 1.0f;
-	glm::vec2 blurDir = glm::vec2(0.0f, 1.0f);
+	GLuint blurRadius = 10;
+	GLfloat sigmaI = 5.0f;
+	GLfloat sigmaS = 5.0f;
 };

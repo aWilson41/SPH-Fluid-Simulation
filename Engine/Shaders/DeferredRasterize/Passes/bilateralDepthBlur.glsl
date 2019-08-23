@@ -1,36 +1,46 @@
-// Basically a directional blur in order to preserve edges 
 #version 460
+#define M_PI 3.1415926535897932384626433832795
 
 layout(binding = 0) uniform sampler2D depthTex;
 
-uniform float blurRadius;
-uniform float blurScale;
-uniform float blurDepthFalloff;
-uniform vec2 blurDir;
+uniform int blurRadius;
+uniform float sigmaI;
+uniform float sigmaS;
 
 smooth in vec2 texCoord;
 
 layout (depth_any) out float gl_FragDepth;
 
+float gaussian(float x, float sigma)
+{
+	float a = 2.0f * sigma * sigma;
+    return exp(-(x * x) / a) / (M_PI * a);
+}
+
 void main()
 {
     float depth = texture(depthTex, texCoord).r;
-    float sum = 0.0f;
-    float wsum = 0.0f;
-    for (float x = -blurRadius; x <= blurRadius; x += 1.0f)
-    {
-        float currDepth = texture(depthTex, texCoord + x * blurDir).r;
-        // Spatial domain
-        float r = x * blurScale;
-        float w = exp(-r * r);
-        // Range domain
-        float r2 = (currDepth - depth) * blurDepthFalloff;
-        float g = exp(-r2 * r2);
-        sum += currDepth * w * g;
-        wsum += w * g;
-    }
-    if (wsum > 0.0f)
-        sum /= wsum;
+    vec2 dim = textureSize(depthTex, 0);
+
+	float sum = 0.0f;
+	float weightSum = 0.0f;
+	for (int j = -blurRadius; j < blurRadius; j++)
+	{
+		for (int i = -blurRadius; i < blurRadius; i++)
+		{
+			vec2 dx = vec2(float(i), float(j)) / dim;
+			vec2 pos = texCoord + dx;
+			float currDepth = texture(depthTex, pos).r;
+
+			float gi = gaussian(currDepth - depth, sigmaI);
+			float dist = sqrt(dx.x * dx.x + dx.y * dx.y);
+			float gs = gaussian(dist, sigmaS);
+			float w = gi * gs;
+			sum += currDepth * w;
+			weightSum += w;
+		}
+	}
+	if (weightSum > 0.0f)
+        sum /= weightSum;
     gl_FragDepth = sum;
-    //gl_FragDepth = depth;
 }

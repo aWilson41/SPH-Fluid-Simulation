@@ -33,7 +33,8 @@ void BilateralDepthBlurPass::render(DeferredRenderer* ren)
 {
 	// Use the default fbo to do the lighting pass
 	glBindFramebuffer(GL_FRAMEBUFFER, fboID);
-	glClear(GL_DEPTH_BUFFER_BIT);
+	//glClear(GL_DEPTH_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	GLuint shaderID = shader->getProgramID();
 	glUseProgram(shaderID);
@@ -41,16 +42,13 @@ void BilateralDepthBlurPass::render(DeferredRenderer* ren)
 	// Set some uniforms
 	GLuint blurRadiusLocation = glGetUniformLocation(shaderID, "blurRadius");
 	if (blurRadiusLocation != -1)
-		glUniform1f(blurRadiusLocation, blurRadius);
-	GLuint blurScaleLocation = glGetUniformLocation(shaderID, "blurScale");
-	if (blurScaleLocation != -1)
-		glUniform1f(blurScaleLocation, blurScale);
-	GLuint blurDepthFalloffLocation = glGetUniformLocation(shaderID, "blurDepthFalloff");
-	if (blurDepthFalloffLocation != -1)
-		glUniform1f(blurDepthFalloffLocation, blurDepthFalloff);
-	GLuint blurDirLocation = glGetUniformLocation(shaderID, "blurDir");
-	if (blurDirLocation != -1)
-		glUniform2f(blurDirLocation, blurDir.x, blurDir.y);
+		glUniform1i(blurRadiusLocation, blurRadius);
+	GLuint sigmaILocation = glGetUniformLocation(shaderID, "sigmaI");
+	if (sigmaILocation != -1)
+		glUniform1f(sigmaILocation, sigmaI);
+	GLuint sigmaSLocation = glGetUniformLocation(shaderID, "sigmaS");
+	if (sigmaSLocation != -1)
+		glUniform1f(sigmaSLocation, sigmaS);
 
 	// Bind the color and depth buffer
 	glActiveTexture(GL_TEXTURE0);
@@ -58,7 +56,7 @@ void BilateralDepthBlurPass::render(DeferredRenderer* ren)
 
 	ren->quadPass();
 
-	// Set this as the color buffer to use
+	// Set this as the depth buffer to use
 	ren->setDepthFboID(fboID);
 
 	// Return to the default fbo
