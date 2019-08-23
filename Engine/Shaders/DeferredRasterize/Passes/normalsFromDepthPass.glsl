@@ -1,54 +1,53 @@
 #version 460
 #define M_PI 3.1415926535897932384626433832795
 
-layout(binding = 0) uniform sampler2D inputTex;
+layout(binding = 0) uniform sampler2D depthTex;
 
-uniform int blurRadius;
-uniform float sigmaI;
-uniform float sigmaS;
+uniform float maxDepth;
+uniform mat4x4 invProj;
+uniform vec2 texelSize;
 
 smooth in vec2 texCoord;
 
-out vec3 fragColor;
+out vec3 fragNormal;
 
-float gaussian(float x, float sigma)
+vec3 uvToEye(vec2 texCoord, float z)
 {
-	float a = 2.0f * sigma * sigma;
-    return exp(-(x * x) / a) / (M_PI * a);
+	vec4 clipPos = vec4(texCoord * 2.0f - 1.0f, z, 1.0f);
+	vec4 viewPos = invProj * clipPos;
+	return viewPos.xyz / viewPos.w;
+}
+
+vec3 getEyePos(vec2 texCoord)
+{
+	return uvToEye(texCoord, texture(depthTex, texCoord).r);
 }
 
 void main()
 {
-    vec3 srcRgb = texture(inputTex, texCoord).rgb;
-    vec2 dim = textureSize(inputTex, 0);
+    // read eye-space depth from texture
+	float depth = texture(depthTex, texCoord).r;
 
-	vec3 sum = vec3(0.0f);
-	vec3 weightSum = vec3(0.0f);
-	for (int j = -blurRadius; j < blurRadius; j++)
+	if (depth > maxDepth)
 	{
-		for (int i = -blurRadius; i < blurRadius; i++)
-		{
-			vec2 dx = vec2(float(i), float(j)) / dim;
-			vec2 pos = texCoord + dx;
-			vec3 currRgb = texture(inputTex, pos).rgb;
-
-			vec3 gi = vec3(
-				gaussian(currRgb.r - srcRgb.r, sigmaI),
-				gaussian(currRgb.g - srcRgb.g, sigmaI),
-				gaussian(currRgb.b - srcRgb.b, sigmaI));
-
-			float dist = sqrt(dx.x * dx.x + dx.y * dx.y);
-			float gs = gaussian(dist, sigmaS);
-			vec3 w = gi * gs;
-			sum += currRgb * w;
-			weightSum += w;
-		}
+		discard;
+		return;
 	}
-	if (weightSum.r > 0.0f)
-        sum.r /= weightSum.r;
-	if (weightSum.g > 0.0f)
-        sum.g /= weightSum.b;
-	if (weightSum.b > 0.0f)
-        sum.b /= weightSum.b;
-    fragColor = sum;
+	// Calculate eye-space position from depth
+	vec3 posEye = uvToEye(texCoord, depth);
+
+	// Calculate differences
+	vec3 ddx = getEyePos(texCoord + vec2(texelSize.x, 0)) - posEye;
+	vec3 ddx2 = posEye - getEyePos(texCoord + vec2(-texelSize.x, 0));
+	if (abs(ddx.z) > abs(ddx2.z))
+		ddx = ddx2;
+
+	vec3 ddy = getEyePos(texCoord[0] + vec2(0, texelSize.y)) - posEye;
+	vec3 ddy2 = posEye - getEyePos(texCoord + vec2(0, -texelSize.y));
+	if (abs(ddy2.z) < abs(ddy.z))
+		ddy = ddy2;
+
+	// Calculate normal
+	vec3 n = cross(ddx, ddy);
+	fragNormal = normalize(n);
 }
