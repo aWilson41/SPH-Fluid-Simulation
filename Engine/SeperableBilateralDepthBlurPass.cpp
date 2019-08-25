@@ -1,14 +1,14 @@
-#include "BilateralDepthBlurPass.h"
+#include "SeperableBilateralDepthBlurPass.h"
 #include "Camera.h"
 #include "DeferredRenderer.h"
 #include "Shaders.h"
 #include <string>
 
-BilateralDepthBlurPass::BilateralDepthBlurPass() : RenderPass("Bilateral Depth Blur Pass")
+SeperableBilateralDepthBlurPass::SeperableBilateralDepthBlurPass() : RenderPass("Seperable Bilateral Depth Blur Pass")
 {
-	shader = Shaders::loadVSFSShader("Bilateral_Depth_Blur_Pass",
+	shader = Shaders::loadVSFSShader("Seperable_Bilateral_Depth_Blur_Pass",
 		"Shaders/DeferredRasterize/Passes/quadVS.glsl",
-		"Shaders/DeferredRasterize/Passes/bilateralDepthBlurPass.glsl");
+		"Shaders/DeferredRasterize/Passes/seperableBilateralDepthBlurPass.glsl");
 	GLuint shaderID = shader->getProgramID();
 	glUseProgram(shaderID);
 	glUniform1i(glGetUniformLocation(shaderID, "depthTex"), 0);
@@ -19,7 +19,7 @@ BilateralDepthBlurPass::BilateralDepthBlurPass() : RenderPass("Bilateral Depth B
 	setNumberOfOutputPorts(1);
 }
 
-BilateralDepthBlurPass::~BilateralDepthBlurPass()
+SeperableBilateralDepthBlurPass::~SeperableBilateralDepthBlurPass()
 {
 	if (fboID != -1)
 	{
@@ -29,7 +29,7 @@ BilateralDepthBlurPass::~BilateralDepthBlurPass()
 	}
 }
 
-void BilateralDepthBlurPass::render(DeferredRenderer* ren)
+void SeperableBilateralDepthBlurPass::render(DeferredRenderer* ren)
 {
 	// Use the default fbo to do the lighting pass
 	glBindFramebuffer(GL_FRAMEBUFFER, fboID);
@@ -39,6 +39,9 @@ void BilateralDepthBlurPass::render(DeferredRenderer* ren)
 	glUseProgram(shaderID);
 
 	// Set some uniforms
+	GLuint blurDirLocation = glGetUniformLocation(shaderID, "blurDir");
+	if (blurDirLocation != -1)
+		glUniform2f(blurDirLocation, blurDir.x, blurDir.y);
 	GLuint blurRadiusLocation = glGetUniformLocation(shaderID, "blurRadius");
 	if (blurRadiusLocation != -1)
 		glUniform1i(blurRadiusLocation, blurRadius);
@@ -62,7 +65,7 @@ void BilateralDepthBlurPass::render(DeferredRenderer* ren)
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void BilateralDepthBlurPass::resizeFramebuffer(int width, int height)
+void SeperableBilateralDepthBlurPass::resizeFramebuffer(int width, int height)
 {
 	setPassDim(width, height);
 

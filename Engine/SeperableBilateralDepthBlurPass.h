@@ -3,11 +3,11 @@
 
 class ShaderProgram;
 
-class BilateralDepthBlurPass : public RenderPass
+class SeperableBilateralDepthBlurPass : public RenderPass
 {
 public:
-	BilateralDepthBlurPass();
-	~BilateralDepthBlurPass();
+	SeperableBilateralDepthBlurPass();
+	~SeperableBilateralDepthBlurPass();
 
 public:
 	void setDepthInput(GLuint* depthInput) { setInput(0, depthInput); }
@@ -15,6 +15,7 @@ public:
 	GLuint* getDepthOutput() { return &depthTexID; }
 
 	// Area of effect (radius for the blur)
+	void setBlurDir(glm::vec2 dir) { blurDir = dir; }
 	void setRadius(GLuint radius) { blurRadius = radius; }
 	void SetSigmaI(GLfloat sigma) { sigmaI = sigma; }
 	void SetSigmaS(GLfloat sigma) { sigmaS = sigma; }
@@ -27,7 +28,8 @@ private:
 	ShaderProgram* shader = nullptr;
 	GLuint depthTexID = -1;
 
-	GLuint blurRadius = 5;
+	glm::vec2 blurDir = glm::vec2(1.0f, 0.0f);
+	GLuint blurRadius = 8;
 	GLfloat sigmaI = 12.0f;
 	GLfloat sigmaS = 16.0f;
 };

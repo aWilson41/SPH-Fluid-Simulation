@@ -34,7 +34,7 @@ public:
 	void reset() override
 	{
 		initTrackballCamera(1.4f, 1.57f, 35.0f,
-			45.0f, 16.0f / 9.0f, 0.0001f, 100000.0f);
+			45.0f, 16.0f / 9.0f, 0.0001f, 1000.0f);
 	}
 
 	// Maps 2d mouse coordinates to spherical coordinates

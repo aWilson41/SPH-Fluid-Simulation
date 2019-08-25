@@ -29,7 +29,7 @@ static const GLfloat REST_DENSITY = 1.225f; // Resting density of the fluid kg/m
 static const GLfloat FRICTION = 0.05f;
 
 // Particle diameter in meters
-static const GLfloat h = 0.09f;
+static const GLfloat h = 0.07f;
 static const GLfloat r = h * 0.5f;
 static const GLfloat PARTICLE_VOLUME = (4.0f / 3.0f) * PI * r * r * r;
 static const GLfloat PARTICLE_MASS = PARTICLE_VOLUME * REST_DENSITY;

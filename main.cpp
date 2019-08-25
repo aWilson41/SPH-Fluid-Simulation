@@ -12,7 +12,9 @@
 #include "Engine/GeometryPass.h"
 #include "Engine/LightingPass.h"
 #include "Engine/BilateralDepthBlurPass.h"
+#include "Engine/SeperableBilateralDepthBlurPass.h"
 #include "Engine/DepthNormalsPass.h"
+#include "Engine/RenderDepthPass.h"
 
 int main(int argc, char *argv[])
 {
@@ -36,24 +38,40 @@ int main(int argc, char *argv[])
 	ren.addMaterial(PhongMaterial(glm::vec3(0.0f, 0.0f, 0.2f), 0.5f));
 
 	// Setup a custom render pass for AO
+	// Render the geometry into a renderbuffer
 	GeometryPass* geomPass = new GeometryPass();
 
+	// Do the lighting pass
 	LightingPass* lightPass = new LightingPass();
 	lightPass->setPosInput(geomPass->getPosOutput());
 	lightPass->setNormalInput(geomPass->getNormalOutput());
 	lightPass->setDiffuseInput(geomPass->getDiffuseOutput());
 	lightPass->setAmbientInput(geomPass->getAmbientOutput());
 
-	BilateralDepthBlurPass* depthBlurPass = new BilateralDepthBlurPass();
+	// Edge preserving blur on the depth
+	SeperableBilateralDepthBlurPass* depthBlurPass = new SeperableBilateralDepthBlurPass();
 	depthBlurPass->setDepthInput(geomPass->getDepthOutput());
 
+	// Reconstruct normals from the blurred depth
 	DepthNormalsPass* depthNormalsPass = new DepthNormalsPass();
 	depthNormalsPass->setDepthInput(depthBlurPass->getDepthOutput());
+
+	RenderDepthPass* depthRenderPass = new RenderDepthPass();
+	depthRenderPass->setDepthInput(depthBlurPass->getDepthOutput());
+
+	// Re-render with new normals (inefficient will be replaced soon)
+	/*LightingPass* lightPass2 = new LightingPass();
+	lightPass2->setPosInput(geomPass->getPosOutput());
+	lightPass2->setNormalInput(depthNormalsPass->getNormalOutput());
+	lightPass2->setDiffuseInput(geomPass->getDiffuseOutput());
+	lightPass2->setAmbientInput(geomPass->getAmbientOutput());*/
 
 	ren.addPass(geomPass);
 	ren.addPass(lightPass);
 	ren.addPass(depthBlurPass);
 	ren.addPass(depthNormalsPass);
+	//ren.addPass(lightPass2);
+	ren.addPass(depthRenderPass);
 
 	renWindow.setRenderer(&ren);
 
