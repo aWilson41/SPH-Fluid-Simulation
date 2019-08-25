@@ -1,8 +1,6 @@
 #include "BilateralRgbBlurPass.h"
-#include "Camera.h"
 #include "DeferredRenderer.h"
 #include "Shaders.h"
-#include <string>
 
 BilateralRgbBlurPass::BilateralRgbBlurPass() : RenderPass("Bilateral Rgb Blur Pass")
 {

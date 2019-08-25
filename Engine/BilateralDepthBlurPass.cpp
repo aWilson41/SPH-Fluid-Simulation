@@ -1,8 +1,6 @@
 #include "BilateralDepthBlurPass.h"
-#include "Camera.h"
 #include "DeferredRenderer.h"
 #include "Shaders.h"
-#include <string>
 
 BilateralDepthBlurPass::BilateralDepthBlurPass() : RenderPass("Bilateral Depth Blur Pass")
 {

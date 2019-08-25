@@ -2,7 +2,6 @@
 #include "Camera.h"
 #include "DeferredRenderer.h"
 #include "Shaders.h"
-#include <string>
 
 DepthNormalsPass::DepthNormalsPass() : RenderPass("Normals From Depth Pass")
 {

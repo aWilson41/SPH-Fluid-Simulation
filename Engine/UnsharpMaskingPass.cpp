@@ -1,8 +1,6 @@
 #include "UnsharpMaskingPass.h"
-#include "Camera.h"
 #include "DeferredRenderer.h"
 #include "Shaders.h"
-#include <string>
 
 UnsharpMaskingPass::UnsharpMaskingPass() : RenderPass("Unsharp Masking Pass")
 {

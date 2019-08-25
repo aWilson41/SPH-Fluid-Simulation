@@ -1,8 +1,6 @@
 #include "RenderDepthPass.h"
-#include "Camera.h"
 #include "DeferredRenderer.h"
 #include "Shaders.h"
-#include <string>
 
 RenderDepthPass::RenderDepthPass() : RenderPass("Render Depth Pass")
 {
