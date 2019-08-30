@@ -6,11 +6,11 @@ UnsharpMaskingPass::UnsharpMaskingPass() : RenderPass("Unsharp Masking Pass")
 {
 	shader = Shaders::loadVSFSShader("Unsharp_Masking_Pass",
 		"Shaders/DeferredRasterize/Passes/quadVS.glsl",
-		"Shaders/DeferredRasterize/Passes/unsharpMaskingPassFS.glsl");
+		"Shaders/DeferredRasterize/Passes/unsharpMaskingPass.glsl");
 	GLuint shaderID = shader->getProgramID();
 	glUseProgram(shaderID);
-	glUniform1i(glGetUniformLocation(shaderID, "gColor"), 0);
-	glUniform1i(glGetUniformLocation(shaderID, "gDepth"), 1);
+	glUniform1i(glGetUniformLocation(shaderID, "colorTex"), 0);
+	glUniform1i(glGetUniformLocation(shaderID, "depthTex"), 1);
 	glUseProgram(0);
 
 	// Takes color and depth input and outputs color and depth

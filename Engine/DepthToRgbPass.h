@@ -4,14 +4,15 @@
 class ShaderProgram;
 
 // Basically just copies over the depth into a new color buffer to render
-class RenderDepthPass : public RenderPass
+class DepthToRgbPass : public RenderPass
 {
 public:
-	RenderDepthPass();
-	~RenderDepthPass();
+	DepthToRgbPass();
+	~DepthToRgbPass();
 
 public:
 	void setDepthInput(GLuint* depthInput) { setInput(0, depthInput); }
+	GLuint* getColorOutput() { return &colorTexID; }
 
 public:
 	void render(DeferredRenderer* ren) override;

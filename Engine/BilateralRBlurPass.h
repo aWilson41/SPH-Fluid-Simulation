@@ -3,16 +3,16 @@
 
 class ShaderProgram;
 
-class BilateralDepthBlurPass : public RenderPass
+class BilateralRBlurPass : public RenderPass
 {
 public:
-	BilateralDepthBlurPass();
-	~BilateralDepthBlurPass();
+	BilateralRBlurPass();
+	~BilateralRBlurPass();
 
 public:
-	void setDepthInput(GLuint* depthInput) { setInput(0, depthInput); }
+	void setColorInput(GLuint* colorInput) { setInput(0, colorInput); }
 
-	GLuint* getDepthOutput() { return &depthTexID; }
+	GLuint* getColorOutput() { return &colorTexID; }
 
 	// Area of effect (radius for the blur)
 	void setRadius(GLuint radius) { blurRadius = radius; }
@@ -25,9 +25,11 @@ public:
 
 private:
 	ShaderProgram* shader = nullptr;
-	GLuint depthTexID = -1;
+	GLuint colorTexID = -1;
 
-	GLuint blurRadius = 5;
+	GLuint blurRadius = 10;
+	// Intensity domain, the difference on the intensity domain is more important
 	GLfloat sigmaI = 12.0f;
+	// Spatial domain
 	GLfloat sigmaS = 16.0f;
 };

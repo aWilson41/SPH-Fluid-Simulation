@@ -11,10 +11,9 @@
 
 #include "Engine/GeometryPass.h"
 #include "Engine/LightingPass.h"
-#include "Engine/BilateralDepthBlurPass.h"
-#include "Engine/SeperableBilateralDepthBlurPass.h"
-#include "Engine/DepthNormalsPass.h"
-#include "Engine/RenderDepthPass.h"
+#include "Engine/DepthToRPass.h"
+#include "Engine/ComputeNormalsPass.h"
+#include "Engine/BilateralRBlurPass.h"
 
 int main(int argc, char *argv[])
 {
@@ -25,7 +24,7 @@ int main(int argc, char *argv[])
 
 	// Create the camera for the renderer to use
 	TrackballCamera cam;
-	cam.initTrackballCamera(0.7f, 1.57f, 30.5f);
+	cam.initTrackballCamera(0.7f, 1.57f, 30.5f, 70.0f, 0.01f, 10000.0f);
 	cam.setFocalPt(0.001505f, -0.000141f, 0.014044f);
 
 	// Create the renderer
@@ -48,30 +47,30 @@ int main(int argc, char *argv[])
 	lightPass->setDiffuseInput(geomPass->getDiffuseOutput());
 	lightPass->setAmbientInput(geomPass->getAmbientOutput());
 
-	// Edge preserving blur on the depth
-	SeperableBilateralDepthBlurPass* depthBlurPass = new SeperableBilateralDepthBlurPass();
-	depthBlurPass->setDepthInput(geomPass->getDepthOutput());
+	// Write the depth to a single component color buffer and linearize
+	DepthToRPass* depthRenderPass = new DepthToRPass();
+	depthRenderPass->setDepthInput(geomPass->getDepthOutput());
+
+	BilateralRBlurPass* depthBlurPass = new BilateralRBlurPass();
+	depthBlurPass->setColorInput(depthRenderPass->getColorOutput());
 
 	// Reconstruct normals from the blurred depth
-	DepthNormalsPass* depthNormalsPass = new DepthNormalsPass();
-	depthNormalsPass->setDepthInput(depthBlurPass->getDepthOutput());
-
-	RenderDepthPass* depthRenderPass = new RenderDepthPass();
-	depthRenderPass->setDepthInput(depthBlurPass->getDepthOutput());
+	ComputeNormalsPass* depthNormalsPass = new ComputeNormalsPass();
+	depthNormalsPass->setColorInput(depthBlurPass->getColorOutput());
 
 	// Re-render with new normals (inefficient will be replaced soon)
-	/*LightingPass* lightPass2 = new LightingPass();
+	LightingPass* lightPass2 = new LightingPass();
 	lightPass2->setPosInput(geomPass->getPosOutput());
 	lightPass2->setNormalInput(depthNormalsPass->getNormalOutput());
 	lightPass2->setDiffuseInput(geomPass->getDiffuseOutput());
-	lightPass2->setAmbientInput(geomPass->getAmbientOutput());*/
+	lightPass2->setAmbientInput(geomPass->getAmbientOutput());
 
 	ren.addPass(geomPass);
 	ren.addPass(lightPass);
+	ren.addPass(depthRenderPass);
 	ren.addPass(depthBlurPass);
 	ren.addPass(depthNormalsPass);
-	//ren.addPass(lightPass2);
-	ren.addPass(depthRenderPass);
+	ren.addPass(lightPass2);
 
 	renWindow.setRenderer(&ren);
 

@@ -1,7 +1,7 @@
 #version 460
 #define M_PI 3.1415926535897932384626433832795
 
-layout(binding = 0) uniform sampler2D depthTex;
+layout(binding = 0) uniform sampler2D inputTex;
 
 uniform int blurRadius;
 uniform float sigmaI;
@@ -9,7 +9,7 @@ uniform float sigmaS;
 
 smooth in vec2 texCoord;
 
-layout (depth_any) out float gl_FragDepth;
+out float fragColor;
 
 float gaussian(float x, float sigma)
 {
@@ -17,10 +17,15 @@ float gaussian(float x, float sigma)
     return exp(-(x * x) / a) / (M_PI * a);
 }
 
+float getDepth(vec2 texCoord)
+{
+	return texture(inputTex, texCoord).r;
+}
+
 void main()
 {
-    float depth = texture(depthTex, texCoord).r;
-    vec2 dim = textureSize(depthTex, 0);
+    float depth = getDepth(texCoord);
+    vec2 dim = textureSize(inputTex, 0);
 
 	float sum = 0.0f;
 	float weightSum = 0.0f;
@@ -31,17 +36,19 @@ void main()
 			vec2 dx = vec2(float(i), float(j)) / dim;
 			vec2 pos = texCoord + dx;
 
-			float currDepth = texture(depthTex, pos).r;
+			// Gaussian weight given the difference of intensity
+			float currDepth = getDepth(pos);
 			float gi = gaussian(currDepth - depth, sigmaI);
 
+			// Gaussian weight given the difference in position
 			float dist = sqrt(dx.x * dx.x + dx.y * dx.y);
 			float gs = gaussian(dist, sigmaS);
+
+			// Then convolve
 			float w = gi * gs;
 			sum += currDepth * w;
 			weightSum += w;
 		}
 	}
-	//if (weightSum > 0.0f)
-        sum /= weightSum;
-    gl_FragDepth = sum;
+    fragColor = sum / weightSum * 2.0f;
 }

@@ -1,7 +1,6 @@
 #version 460
-#define M_PI 3.1415926535897932384626433832795
 
-layout(binding = 0) uniform sampler2D depthTex;
+layout(binding = 0) uniform sampler2D inputTex;
 
 uniform float maxDepth;
 uniform mat4x4 invProj;
@@ -20,13 +19,13 @@ vec3 uvToEye(vec2 texCoord, float z)
 
 vec3 getEyePos(vec2 texCoord)
 {
-	return uvToEye(texCoord, texture(depthTex, texCoord).r);
+	return uvToEye(texCoord, texture(inputTex, texCoord).r);
 }
 
 void main()
 {
     // read eye-space depth from texture
-	float depth = texture(depthTex, texCoord).r;
+	float depth = texture(inputTex, texCoord).r;
 	if (depth > maxDepth)
 		discard;
 

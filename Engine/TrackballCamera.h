@@ -24,6 +24,17 @@ public:
 		TrackballCamera::rho = rho;
 		updateCam();
 	}
+	void initTrackballCamera(GLfloat phi, GLfloat theta, GLfloat rho, GLfloat fov, GLfloat nearZ, GLfloat farZ)
+	{
+		TrackballCamera::phi = phi;
+		TrackballCamera::theta = theta;
+		TrackballCamera::rho = rho;
+		TrackballCamera::fov = fov;
+		TrackballCamera::nearZ = nearZ;
+		TrackballCamera::farZ = farZ;
+		setPerspective(fov, aspectRatio, nearZ, farZ);
+		updateCam();
+	}
 	void initTrackballCamera(GLfloat fov, GLfloat aspectRatio, GLfloat nearZ, GLfloat farZ)
 	{
 		setPerspective(fov, aspectRatio, nearZ, farZ);

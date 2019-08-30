@@ -3,18 +3,16 @@
 
 class ShaderProgram;
 
-class DepthNormalsPass : public RenderPass
+// Basically just copies over the depth into a new color buffer to render
+class DepthToRPass : public RenderPass
 {
 public:
-	DepthNormalsPass();
-	~DepthNormalsPass();
+	DepthToRPass();
+	~DepthToRPass();
 
 public:
 	void setDepthInput(GLuint* depthInput) { setInput(0, depthInput); }
-
-	GLuint* getNormalOutput() { return &normalTexID; }
-
-	void setMaxDepth(GLfloat maxDepth) { DepthNormalsPass::maxDepth = maxDepth; }
+	GLuint* getColorOutput() { return &colorTexID; }
 
 public:
 	void render(DeferredRenderer* ren) override;
@@ -22,7 +20,5 @@ public:
 
 private:
 	ShaderProgram* shader = nullptr;
-	GLuint normalTexID = -1;
-
-	GLfloat maxDepth = 0.999f;
+	GLuint colorTexID = -1;
 };

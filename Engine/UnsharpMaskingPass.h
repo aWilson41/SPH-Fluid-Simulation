@@ -35,8 +35,8 @@ private:
 	GLuint colorTexID = -1;
 	GLuint depthBufferID = -1;
 
-	GLfloat darknessFactor = 1000.0f;
-	GLuint radius = 30;
+	GLfloat darknessFactor = 5.0f;
+	GLuint radius = 20;
 	GLfloat radiusRatio = -1.0f;
-	GLfloat sigma = -1.0f;
+	GLfloat sigma = 2.0f;
 };
