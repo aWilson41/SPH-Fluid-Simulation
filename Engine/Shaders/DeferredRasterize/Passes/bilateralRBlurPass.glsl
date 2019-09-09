@@ -17,14 +17,9 @@ float gaussian(float x, float sigma)
     return exp(-(x * x) / a) / (M_PI * a);
 }
 
-float getDepth(vec2 texCoord)
-{
-	return texture(inputTex, texCoord).r;
-}
-
 void main()
 {
-    float depth = getDepth(texCoord);
+    float depth = texture(inputTex, texCoord).r;
     vec2 dim = textureSize(inputTex, 0);
 
 	float sum = 0.0f;
@@ -37,7 +32,7 @@ void main()
 			vec2 pos = texCoord + dx;
 
 			// Gaussian weight given the difference of intensity
-			float currDepth = getDepth(pos);
+			float currDepth = texture(inputTex, pos).r;
 			float gi = gaussian(currDepth - depth, sigmaI);
 
 			// Gaussian weight given the difference in position
@@ -50,5 +45,5 @@ void main()
 			weightSum += w;
 		}
 	}
-    fragColor = sum / weightSum * 2.0f;
+    fragColor = sum / weightSum;
 }

@@ -27,9 +27,9 @@ private:
 	ShaderProgram* shader = nullptr;
 	GLuint colorTexID = -1;
 
-	GLuint blurRadius = 10;
-	// Intensity domain, the difference on the intensity domain is more important
-	GLfloat sigmaI = 12.0f;
-	// Spatial domain
-	GLfloat sigmaS = 16.0f;
+	GLuint blurRadius = 15;
+	// Intensity domain
+	GLfloat sigmaI = 0.2f;
+	// Spatial domain, increase to make positional differences more important
+	GLfloat sigmaS = 1.0f;
 };

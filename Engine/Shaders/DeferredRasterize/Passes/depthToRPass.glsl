@@ -16,5 +16,5 @@ float linearizeDepth(float z)
 
 void main()
 {
-	fragColor = texture(depthTex, texCoord).r;
+	fragColor = linearizeDepth(texture(depthTex, texCoord).r);
 }

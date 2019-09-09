@@ -212,6 +212,7 @@ void SPHInteractor::updateParticleMapper()
 	glm::vec3* colors = reinterpret_cast<glm::vec3*>(particleMapper->getColorData());
 	for (UINT i = 0; i < particleMapper->getInstanceCount(); i++)
 	{
+		//colors[i] = glm::vec3(0.2f, 0.2f, 0.9f);
 		colors[i] = MathHelp::lerp(colorFunc, glm::length(sphDomain->particles[i].velocity) / 1.5f);
 	}
 	particleMapper->update();
