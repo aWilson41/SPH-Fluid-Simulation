@@ -4,22 +4,26 @@ layout(binding = 0) uniform sampler2D inputTex;
 
 uniform float maxDepth;
 uniform mat4x4 invProj;
+uniform float nearZ;
+uniform float farZ;
 uniform vec2 texelSize;
 
 smooth in vec2 texCoord;
 
 out vec3 fragNormal;
 
-vec3 uvToEye(vec2 texCoord, float z)
+float unlinearizeDepth(float z)
 {
-	vec4 clipPos = vec4(texCoord * 2.0f - 1.0f, z, 1.0f);
-	vec4 viewPos = invProj * clipPos;
-	return viewPos.xyz / viewPos.w;
+	return -((2.0f * nearZ * farZ / z) - farZ - nearZ) / (farZ - nearZ);
 }
 
 vec3 getEyePos(vec2 texCoord)
 {
-	return uvToEye(texCoord, texture(inputTex, texCoord).r);
+	float z = unlinearizeDepth(texture(inputTex, texCoord).r);
+	vec4 clipPos = vec4(texCoord * 2.0f - 1.0f, 2.0f * z - 1.0f, 1.0f);
+	vec4 viewPos = invProj * clipPos;
+
+	return viewPos.xyz / viewPos.w;
 }
 
 void main()
@@ -30,14 +34,14 @@ void main()
 		discard;
 
 	// Calculate the position of this fragment (view space)
-	vec3 pos = uvToEye(texCoord, depth);
+	vec3 pos = getEyePos(texCoord);
 
 	// Compute surface tangents
 	// Compute left and right depth
 	vec3 ddx = getEyePos(texCoord + vec2(texelSize.x, 0)) - pos;
 	vec3 ddx2 = pos - getEyePos(texCoord - vec2(texelSize.x, 0));
 	// Use the smaller one as it's closest
-	if (abs(ddx.z) > abs(ddx2.z))
+	if (abs(ddx2.z) < abs(ddx.z))
 		ddx = ddx2;
 
 	vec3 ddy = getEyePos(texCoord + vec2(0, texelSize.y)) - pos;

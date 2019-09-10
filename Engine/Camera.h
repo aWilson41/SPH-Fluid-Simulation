@@ -52,6 +52,7 @@ public:
 	glm::vec3 getEyePos() { return eyePos; }
 	glm::vec3 getFocalPt() { return focalPt; }
 	glm::vec3 getUp() { return up; }
+	glm::vec3 getLookDir() { return glm::normalize(focalPt - eyePos); }
 
 public:
 	// Camera view matrix

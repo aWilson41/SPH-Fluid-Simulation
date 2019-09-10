@@ -1,4 +1,5 @@
 #include "LightingPass.h"
+#include "Camera.h"
 #include "DeferredRenderer.h"
 #include "Shaders.h"
 
@@ -43,6 +44,15 @@ void LightingPass::render(DeferredRenderer* ren)
 	GLuint lightDirLocation = glGetUniformLocation(shaderID, "lightDir");
 	if (lightDirLocation != -1)
 		glUniform3fv(lightDirLocation, 1, &ren->getLightDir()[0]);
+	GLuint viewDirLocation = glGetUniformLocation(shaderID, "viewDir");
+	if (viewDirLocation != -1)
+		glUniform3fv(viewDirLocation, 1, &ren->getCamera()->getLookDir()[0]);
+	GLuint invProjLocation = glGetUniformLocation(shaderID, "invProj");
+	if (invProjLocation != -1)
+	{
+		glm::mat4 invProj = glm::inverse(ren->getCamera()->proj);
+		glUniformMatrix4fv(invProjLocation, 1, GL_FALSE, &invProj[0][0]);
+	}
 
 	// Bind the textures from the last pass
 	glActiveTexture(GL_TEXTURE0);

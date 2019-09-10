@@ -41,11 +41,11 @@ int main(int argc, char *argv[])
 	GeometryPass* geomPass = new GeometryPass();
 
 	// Do the lighting pass
-	LightingPass* lightPass = new LightingPass();
+	/*LightingPass* lightPass = new LightingPass();
 	lightPass->setPosInput(geomPass->getPosOutput());
 	lightPass->setNormalInput(geomPass->getNormalOutput());
 	lightPass->setDiffuseInput(geomPass->getDiffuseOutput());
-	lightPass->setAmbientInput(geomPass->getAmbientOutput());
+	lightPass->setAmbientInput(geomPass->getAmbientOutput());*/
 
 	// Write the depth to a single component color buffer and linearize
 	DepthToRPass* depthRenderPass = new DepthToRPass();
@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
 	lightPass2->setAmbientInput(geomPass->getAmbientOutput());
 
 	ren.addPass(geomPass);
-	ren.addPass(lightPass);
+	//ren.addPass(lightPass);
 	ren.addPass(depthRenderPass);
 	ren.addPass(depthBlurPass);
 	ren.addPass(depthNormalsPass);
