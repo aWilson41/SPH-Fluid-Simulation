@@ -1,16 +1,15 @@
-#include "DepthToRPass.h"
-#include "Camera.h"
+#include "BilateralRgbBlurPass.h"
 #include "DeferredRenderer.h"
 #include "Shaders.h"
 
-DepthToRPass::DepthToRPass() : RenderPass("Depth_To_R_Pass")
+BilateralRgbBlurPass::BilateralRgbBlurPass() : RenderPass("Bilateral_R_Blur_Pass")
 {
-	shader = Shaders::loadVSFSShader("Depth_To_R_Pass",
+	shader = Shaders::loadVSFSShader("Bilateral_R_Blur_Pass",
 		"Shaders/DeferredRasterize/Passes/quadVS.glsl",
-		"Shaders/DeferredRasterize/Passes/depthToRPass.glsl");
+		"Shaders/DeferredRasterize/Passes/bilateralRgbBlurPass.glsl");
 	GLuint shaderID = shader->getProgramID();
 	glUseProgram(shaderID);
-	glUniform1i(glGetUniformLocation(shaderID, "depthTex"), 0);
+	glUniform1i(glGetUniformLocation(shaderID, "inputTex"), 0);
 	glUseProgram(0);
 
 	// Takes color and depth input and outputs color and depth
@@ -18,7 +17,7 @@ DepthToRPass::DepthToRPass() : RenderPass("Depth_To_R_Pass")
 	setNumberOfOutputPorts(1);
 }
 
-DepthToRPass::~DepthToRPass()
+BilateralRgbBlurPass::~BilateralRgbBlurPass()
 {
 	if (fboID != -1)
 	{
@@ -28,7 +27,7 @@ DepthToRPass::~DepthToRPass()
 	}
 }
 
-void DepthToRPass::render(DeferredRenderer* ren)
+void BilateralRgbBlurPass::render(DeferredRenderer* ren)
 {
 	// Use the default fbo to do the lighting pass
 	glBindFramebuffer(GL_FRAMEBUFFER, fboID);
@@ -37,12 +36,16 @@ void DepthToRPass::render(DeferredRenderer* ren)
 	GLuint shaderID = shader->getProgramID();
 	glUseProgram(shaderID);
 
-	GLuint nearZLocation = glGetUniformLocation(shaderID, "nearZ");
-	if (nearZLocation != -1)
-		glUniform1f(nearZLocation, ren->getCamera()->nearZ);
-	GLuint farZLocation = glGetUniformLocation(shaderID, "farZ");
-	if (farZLocation != -1)
-		glUniform1f(farZLocation, ren->getCamera()->farZ);
+	// Set some uniforms
+	GLuint blurRadiusLocation = glGetUniformLocation(shaderID, "blurRadius");
+	if (blurRadiusLocation != -1)
+		glUniform1i(blurRadiusLocation, blurRadius);
+	GLuint sigmaILocation = glGetUniformLocation(shaderID, "sigmaI");
+	if (sigmaILocation != -1)
+		glUniform1f(sigmaILocation, sigmaI);
+	GLuint sigmaSLocation = glGetUniformLocation(shaderID, "sigmaS");
+	if (sigmaSLocation != -1)
+		glUniform1f(sigmaSLocation, sigmaS);
 
 	// Bind the color and depth buffer
 	glActiveTexture(GL_TEXTURE0);
@@ -51,13 +54,13 @@ void DepthToRPass::render(DeferredRenderer* ren)
 	ren->quadPass();
 
 	// Set this as the depth buffer to use
-	ren->setColorFboID(fboID);
+	ren->setDepthFboID(fboID);
 
 	// Return to the default fbo
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void DepthToRPass::resizeFramebuffer(int width, int height)
+void BilateralRgbBlurPass::resizeFramebuffer(int width, int height)
 {
 	setPassDim(width, height);
 
@@ -76,7 +79,7 @@ void DepthToRPass::resizeFramebuffer(int width, int height)
 	// Setup the color buffer
 	glGenTextures(1, &colorTexID);
 	glBindTexture(GL_TEXTURE_2D, colorTexID);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, width, height, 0, GL_RED, GL_FLOAT, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);

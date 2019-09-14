@@ -9,7 +9,7 @@ uniform float sigmaS;
 
 smooth in vec2 texCoord;
 
-out float fragColor;
+out vec3 fragColor;
 
 float gaussian(float x, float sigma)
 {
@@ -19,11 +19,11 @@ float gaussian(float x, float sigma)
 
 void main()
 {
-    float intensity = texture(inputTex, texCoord).r;
+    vec3 rgb = texture(inputTex, texCoord).rgb;
     vec2 dim = textureSize(inputTex, 0);
 
-	float sum = 0.0f;
-	float weightSum = 0.0f;
+	vec3 sum = vec3(0.0f);
+	vec3 weightSum = vec3(0.0f);
 	for (int j = -blurRadius; j < blurRadius; j++)
 	{
 		for (int i = -blurRadius; i < blurRadius; i++)
@@ -32,16 +32,17 @@ void main()
 			vec2 pos = texCoord + dx;
 
 			// Gaussian weight given the difference of intensity
-			float currIntensity = texture(inputTex, pos).r;
-			float gi = gaussian(currIntensity - intensity, sigmaI);
+			vec3 currRgb = texture(inputTex, pos).rgb;
+			vec3 diffRgb = currRgb - rgb;
+			vec3 gi = vec3(gaussian(diffRgb.x, sigmaI), gaussian(diffRgb.y, sigmaI), gaussian(diffRgb.z, sigmaI));
 
 			// Gaussian weight given the difference in position
 			float dist = sqrt(dx.x * dx.x + dx.y * dx.y);
 			float gs = gaussian(dist, sigmaS);
 
 			// Then convolve
-			float w = gi * gs;
-			sum += currIntensity * w;
+			vec3 w = gi * gs;
+			sum += currRgb * w;
 			weightSum += w;
 		}
 	}
