@@ -1,19 +1,20 @@
-#include "Engine/DeferredRenderer.h"
-#include "Engine/GlyphPolyDataMapper.h"
-#include "Engine/ImageData.h"
-#include "Engine/PhongMaterial.h"
-#include "Engine/PlaneSource.h"
-#include "Engine/PNGWriter.h"
-#include "Engine/RayTraceRenderer.h"
-#include "Engine/RenderWindow.h"
-#include "Engine/TrackballCamera.h"
 #include "SPHInteractor.h"
+#include <DeferredRenderer.h>
+#include <GlyphPolyDataMapper.h>
+#include <ImageData.h>
+#include <PhongMaterial.h>
+#include <PlaneSource.h>
+#include <PNGWriter.h>
+#include <RayTraceRenderer.h>
+#include <RenderWindow.h>
+#include <TrackballCamera.h>
 
-#include "Engine/GeometryPass.h"
-#include "Engine/LightingPass.h"
-#include "Engine/DepthToRPass.h"
-#include "Engine/ComputeNormalsPass.h"
-#include "Engine/BilateralRBlurPass.h"
+#include <BilateralRBlurPass.h>
+#include <ComputeNormalsPass.h>
+#include <CubeMapPass.h>
+#include <DepthToRPass.h>
+#include <GeometryPass.h>
+#include <LightingPass.h>
 
 int main(int argc, char *argv[])
 {
@@ -27,6 +28,7 @@ int main(int argc, char *argv[])
 	cam.initTrackballCamera(0.7f, 1.57f, 30.5f, 70.0f, 0.01f, 10000.0f);
 	cam.setFocalPt(0.001505f, -0.000141f, 0.014044f);
 
+
 	// Create the renderer
 	DeferredRenderer ren(false);
 	//RayTraceRenderer ren;
@@ -35,22 +37,57 @@ int main(int argc, char *argv[])
 	ren.addMaterial(PhongMaterial(glm::vec3(0.2f, 0.4f, 0.2f), 0.5f));
 	ren.addMaterial(PhongMaterial(glm::vec3(0.2f, 0.2f, 0.2f), 0.5f));
 	ren.addMaterial(PhongMaterial(glm::vec3(0.0f, 0.0f, 0.2f), 0.5f));
+	renWindow.setRenderer(&ren);
 
-	// Setup a custom render pass for AO
+	// Setup the camera interactor (maps user window input to camera)
+	SPHInteractor iren;
+	iren.setRenderer(&ren);
+	iren.setCamera(&cam);
+	renWindow.setInteractor(&iren);
+
+	// Setup a ground plane
+	PlaneSource planeSource;
+	planeSource.update();
+	PolyDataMapper planeMapper;
+	planeMapper.setInput(planeSource.getOutput());
+	planeMapper.setMaterial(ren.getMaterial(0));
+	planeMapper.setModelMatrix(MathHelp::matrixScale(5.0f, 1.0f, 5.0f));
+	planeMapper.update();
+	ren.addRenderItem(&planeMapper);
+
+
+	// Render a cubemap once without fluid
+	//CubeMapPass* cubeMapPass = new CubeMapPass();
+	//cubeMapPass->setPassDim(128, 128);
+
+	//ren.addPass(cubeMapPass);
+
+	//// Do the initial render
+	//renWindow.render();
+
+	//// Remove the pass
+	//ren.removePass(cubeMapPass);
+
+	// Add the fluid
+	ren.addRenderItem(iren.getParticleMapper());
+
+
+	// Setup the passes for the main loop
 	// Render the geometry into a renderbuffer
 	GeometryPass* geomPass = new GeometryPass();
 
 	// Do the lighting pass
-	/*LightingPass* lightPass = new LightingPass();
+	LightingPass* lightPass = new LightingPass();
 	lightPass->setPosInput(geomPass->getPosOutput());
 	lightPass->setNormalInput(geomPass->getNormalOutput());
 	lightPass->setDiffuseInput(geomPass->getDiffuseOutput());
-	lightPass->setAmbientInput(geomPass->getAmbientOutput());*/
+	lightPass->setAmbientInput(geomPass->getAmbientOutput());
 
 	// Write the depth to a single component color buffer and linearize
 	DepthToRPass* depthRenderPass = new DepthToRPass();
 	depthRenderPass->setDepthInput(geomPass->getDepthOutput());
 
+	// Do an edge preserved blur on the linearized depth image
 	BilateralRBlurPass* depthBlurPass = new BilateralRBlurPass();
 	depthBlurPass->setColorInput(depthRenderPass->getColorOutput());
 
@@ -58,7 +95,7 @@ int main(int argc, char *argv[])
 	ComputeNormalsPass* depthNormalsPass = new ComputeNormalsPass();
 	depthNormalsPass->setColorInput(depthBlurPass->getColorOutput());
 
-	// Re-render with new normals (inefficient will be replaced soon)
+	// Re-render with new normals, specularity, fresnel
 	LightingPass* lightPass2 = new LightingPass();
 	lightPass2->setPosInput(geomPass->getPosOutput());
 	lightPass2->setNormalInput(depthNormalsPass->getNormalOutput());
@@ -72,32 +109,11 @@ int main(int argc, char *argv[])
 	ren.addPass(depthNormalsPass);
 	ren.addPass(lightPass2);
 
-	renWindow.setRenderer(&ren);
-
-	// Setup the camera interactor (maps user window input to camera)
-	SPHInteractor iren;
-	iren.setRenderer(&ren);
-	iren.setCamera(&cam);
-	renWindow.setInteractor(&iren);
-	ren.addRenderItem(iren.getParticleMapper());
-
-	// Setup a ground plane
-	PlaneSource planeSource;
-	planeSource.update();
-	PolyDataMapper planeMapper;
-	planeMapper.setInput(planeSource.getOutput());
-	planeMapper.setMaterial(ren.getMaterial(0));
-	planeMapper.setModelMatrix(MathHelp::matrixScale(5.0f, 1.0f, 5.0f));
-	planeMapper.update();
-	ren.addRenderItem(&planeMapper);
-
 	// Update loop
 	while (renWindow.isActive())
 	{
-		// Update the interactor (processes input and the simulation)
-		iren.update();
-		// Do the render, swap buffers, poll for input
-		renWindow.render();
+		iren.update(); // Process simulation and interactor
+		renWindow.render(); // Render and poll for input
 	}
 
 	return EXIT_SUCCESS;

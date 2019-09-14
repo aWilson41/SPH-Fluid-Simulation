@@ -39,14 +39,14 @@ namespace Shaders
 		return shader;
 	}
 
-	ShaderProgram* getShader(Renderer* ren, std::string mapperName, ShaderProperties* properties)
+	ShaderProgram* getShader(std::string shaderGroup, std::string mapperName, ShaderProperties* properties)
 	{
-		if (ren == nullptr || properties == nullptr)
+		if (properties == nullptr)
 			return nullptr;
 
 		properties->update();
 
-		std::string shaderPath = "Shaders/" + ren->getShaderDirectory() + mapperName + '/';
+		std::string shaderPath = "Shaders/" + shaderGroup + '/' + mapperName + '/';
 		// Read the mapping file to find the correct shader
 		unsigned long long lineNum = properties->getKey();
 		std::ifstream file;

@@ -138,13 +138,13 @@ void ImageMapper::updateBuffer()
 	glBindVertexArray(0);
 }
 
-void ImageMapper::useShader(Renderer* ren)
+void ImageMapper::useShader(std::string shaderGroup)
 {
 	if (imageData == nullptr || vaoID == -1)
 		return;
 
 	if (objectProperties->isOutOfDate())
-		shaderProgram = Shaders::getShader(ren, "ImageMapper", &properties);
+		shaderProgram = Shaders::getShader(shaderGroup, "ImageMapper", &properties);
 
 	glUseProgram(shaderProgram->getProgramID());
 }

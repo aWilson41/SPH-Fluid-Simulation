@@ -16,8 +16,10 @@ static int nextPowerOfTwo(int x) {
 
 RayTraceRenderer::RayTraceRenderer()
 {
+	shaderGroup = "Raytrace";
+
 	// Load the compute shader
-	std::string shaderDir = "Shaders/" + getShaderDirectory();
+	std::string shaderDir = "Shaders/" + shaderGroup + '/';
 	std::vector<std::string> shaderPaths;
 	shaderPaths.push_back(shaderDir + "raytracer.glsl");
 	shaderPaths.push_back(shaderDir + "random.glsl");

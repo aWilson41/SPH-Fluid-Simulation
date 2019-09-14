@@ -8,6 +8,8 @@
 
 DeferredRenderer::DeferredRenderer(bool useDefaults)
 {
+	shaderGroup = "DeferredRasterize";
+
 	// A non-zero vao must be bound even if not using vertex attributes for quad pass
 	glGenVertexArrays(1, &emptyVaoID);
 
@@ -38,6 +40,9 @@ DeferredRenderer::~DeferredRenderer()
 
 void DeferredRenderer::render()
 {
+	if (PassesModified)
+		resizeFramebuffer(defaultFboWidth, defaultFboHeight);
+
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -81,6 +86,23 @@ void DeferredRenderer::quadPass()
 	glBindVertexArray(0);
 }
 
+void DeferredRenderer::removePass(RenderPass* pass)
+{
+	size_t passIndex = -1;
+	for (size_t i = 0; i < renderPasses.size(); i++)
+	{
+		if (pass = renderPasses[i])
+		{
+			passIndex = i;
+			break;
+		}
+	}
+	if (passIndex == -1)
+		return;
+	renderPasses.erase(renderPasses.begin() + passIndex);
+	PassesModified = true;
+}
+
 // Resizes the framebuffer (deletes and recreates), can also be used for initialization
 void DeferredRenderer::resizeFramebuffer(int width, int height)
 {
@@ -91,4 +113,5 @@ void DeferredRenderer::resizeFramebuffer(int width, int height)
 	{
 		renderPasses[i]->resizeFramebuffer(width, height);
 	}
+	PassesModified = false;
 }

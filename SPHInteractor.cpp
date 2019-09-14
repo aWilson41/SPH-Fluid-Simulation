@@ -1,18 +1,22 @@
 #include "SPHInteractor.h"
-#include "Engine/Geometry3D.h"
-#include "Engine/GlyphPolyDataMapper.h"
-#include "Engine/ImageData.h"
-#include "Engine/PNGWriter.h"
-#include "Engine/RawImageWriter.h"
-#include "Engine/Renderer.h"
-#include "Engine/SphereSource.h"
-#include "Engine/TrackballCamera.h"
+#ifdef IISPH
+#include "IISPHDomain.h"
+#endif
 #include "SPHDomain.h"
 #include "SPHRasterizer.h"
+#ifdef MULTITHREAD
 #include "ThreadedSPHDomain.h"
-#include "IISPHDomain.h"
+#endif
 #include <chrono>
+#include <Geometry3D.h>
 #include <GLFW/glfw3.h>
+#include <GlyphPolyDataMapper.h>
+#include <ImageData.h>
+#include <PNGWriter.h>
+#include <RawImageWriter.h>
+#include <Renderer.h>
+#include <SphereSource.h>
+#include <TrackballCamera.h>
 #include <tuple>
 
 SPHInteractor::SPHInteractor()

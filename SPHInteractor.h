@@ -1,6 +1,6 @@
 #pragma once
 #include "Constants.h"
-#include "Engine/TrackballCameraInteractor.h"
+#include <TrackballCameraInteractor.h>
 
 class GlyphPolyDataMapper;
 class IISPHDomain;

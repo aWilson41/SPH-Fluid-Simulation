@@ -34,10 +34,10 @@ void GeometryPass::render(DeferredRenderer* ren)
 	glClearTexImage(gDiffuseColorTexID, 0, GL_RGBA, GL_UNSIGNED_BYTE, diffuseClearColor);
 	float* clearColor = ren->getClearColor();
 	static GLubyte ambientClearColor[4] = {
-		static_cast<double>(clearColor[0]) * 255.0, 
-		static_cast<double>(clearColor[1]) * 255.0,
-		static_cast<double>(clearColor[2]) * 255.0,
-		static_cast<double>(clearColor[3]) * 255.0 };
+		static_cast<GLubyte>(clearColor[0] * 255.0f), 
+		static_cast<GLubyte>(clearColor[1] * 255.0f),
+		static_cast<GLubyte>(clearColor[2] * 255.0f),
+		static_cast<GLubyte>(clearColor[3] * 255.0f) };
 	glClearTexImage(gAmbientColorTexID, 0, GL_RGBA, GL_UNSIGNED_BYTE, ambientClearColor);
 	static float depthClearValue = 1.0f;
 	glClearTexImage(gDepthTexID, 0, GL_DEPTH_COMPONENT, GL_FLOAT, &depthClearValue);
@@ -69,7 +69,6 @@ void GeometryPass::resizeFramebuffer(int width, int height)
 
 	glGenFramebuffers(1, &fboID);
 	glBindFramebuffer(GL_FRAMEBUFFER, fboID);
-	//printf("Created geometry pass fbo %d\n", fboID);
 
 	// Setup the position buffer
 	glGenTextures(1, &gPosTexID);

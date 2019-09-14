@@ -24,7 +24,7 @@ public:
 	// Updates the buffers to match the input data
 	void update() override;
 
-	void useShader(Renderer* ren) override;
+	void useShader(std::string shaderGroup) override;
 
 	void draw(Renderer* ren) override;
 

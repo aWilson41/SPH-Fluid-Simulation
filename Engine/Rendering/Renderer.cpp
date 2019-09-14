@@ -6,6 +6,7 @@
 
 Renderer::Renderer()
 {
+	shaderGroup = "DirectRasterize";
 	glClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]);
 }
 
@@ -33,6 +34,9 @@ bool Renderer::containsRenderItem(AbstractMapper* mapper)
 
 void Renderer::render()
 {
+	if (cam == nullptr)
+		printf("Renderer missing camera.\n");
+
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 

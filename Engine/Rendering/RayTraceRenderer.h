@@ -15,8 +15,6 @@ public:
 
 	void resizeFramebuffer(int width, int height) override;
 
-	std::string getShaderDirectory() override { return "Raytrace/"; }
-
 protected:
 	void bindCameraUniforms(GLuint shaderID);
 	void bindSceneUniforms(GLuint shaderID);

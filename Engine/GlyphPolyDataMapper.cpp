@@ -170,13 +170,13 @@ void GlyphPolyDataMapper::updateBuffer()
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
-void GlyphPolyDataMapper::useShader(Renderer* ren)
+void GlyphPolyDataMapper::useShader(std::string shaderGroup)
 {
 	if (polyData == nullptr || vaoID == -1)
 		return;
 
 	if (objectProperties->isOutOfDate())
-		shaderProgram = Shaders::getShader(ren, "GlyphPolyDataMapper", &properties);
+		shaderProgram = Shaders::getShader(shaderGroup, "GlyphPolyDataMapper", &properties);
 
 	glUseProgram(shaderProgram->getProgramID());
 }

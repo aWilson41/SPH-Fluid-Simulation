@@ -1,6 +1,6 @@
 #pragma once
-#include "Engine/MathHelper.h"
 #include "Particle.h"
+#include <MathHelper.h>
 
 class ThreadedSPHDomain
 {

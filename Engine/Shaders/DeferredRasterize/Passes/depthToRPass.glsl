@@ -1,3 +1,4 @@
+// Linearizes the depth buffer and outputs it
 #version 460
 
 layout(binding = 0) uniform sampler2D depthTex;

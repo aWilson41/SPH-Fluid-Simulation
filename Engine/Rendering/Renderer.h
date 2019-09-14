@@ -34,12 +34,11 @@ public:
 	glm::vec3 getLightDir() { return lightDir; }
 	int getFramebufferWidth() { return defaultFboWidth; }
 	int getFramebufferHeight() { return defaultFboHeight; }
+	std::string getShaderGroup() { return shaderGroup; };
 
 	void setCamera(Camera* cam) { Renderer::cam = cam; }
 	void setClearColor(float r, float g, float b, float a);
-
-	// Returns the shader directory for this particular renderer
-	virtual std::string getShaderDirectory() { return "DirectRasterize/"; };
+	void setShaderGroup(std::string shaderGroup) { Renderer::shaderGroup = shaderGroup; }
 
 protected:
 	// Will eventually hold actors instead of mappers
@@ -49,6 +48,7 @@ protected:
 	bool initialized = false;
 
 	PropertyMap<32> sceneProperties;
+	std::string shaderGroup = "";
 	glm::vec3 lightDir = glm::vec3(0.0f, 1.0f, 1.0f); // Temporarily only supporting a single directional light
 
 	// Default framebuffer size, resized on init

@@ -1,5 +1,5 @@
 #pragma once
-#include "Engine/MathHelper.h"
+#include <MathHelper.h>
 
 // Maximum amount of frames allowed to output, only used if output frames is on
 static const GLuint NUMFRAMES = 500;

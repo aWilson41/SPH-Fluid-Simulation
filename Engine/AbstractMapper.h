@@ -10,19 +10,7 @@ class ShaderProperties
 {
 public:
 	// Updates the property combining all the properties to produce a unique 64bit value
-	unsigned long long update()
-	{
-		// To quickly compile these bitset we add them
-		key = std::bitset<64>(
-			renderProperties.getPropertyBits().to_string() +
-			sceneProperties.getPropertyBits().to_string() +
-			objectProperties.getPropertyBits().to_string());
-		renderProperties.makeCurrent();
-		sceneProperties.makeCurrent();
-		objectProperties.makeCurrent();
-		keyLong = key.to_ullong();
-		return keyLong;
-	}
+	unsigned long long update();
 
 	PropertyMap<32>* getObjectProperties() { return &objectProperties; }
 	PropertyMap<16>* getSceneProperties() { return &sceneProperties; }
@@ -35,32 +23,7 @@ public:
 
 	std::string getFullBitString() { return key.to_string(); }
 
-	std::string getFullPropertyString()
-	{
-		std::map<std::string, size_t> renderPropertyMap = renderProperties.getIndexMap();
-		std::map<std::string, size_t> scenePropertyMap = sceneProperties.getIndexMap();
-		std::map<std::string, size_t> objectPropertyMap = objectProperties.getIndexMap();
-		std::string results = "Render Properties <Bit, name, state>:\n";
-		for (std::map<std::string, size_t>::iterator i = renderPropertyMap.begin(); i != renderPropertyMap.end(); i++)
-		{
-			std::string state = (renderProperties.getProperty(i->first) == true) ? "true" : "false";
-			results += std::to_string(i->second) + ' ' + i->first + ' ' + state + '\n';
-		}
-		results += "Scene Properties <Bit, name, state>:\n";
-		for (std::map<std::string, size_t>::iterator i = scenePropertyMap.begin(); i != scenePropertyMap.end(); i++)
-		{
-			std::string state = (sceneProperties.getProperty(i->first) == true) ? "true" : "false";
-			results += std::to_string(i->second) + ' ' + i->first + ' ' + state + '\n';
-		}
-		results += "Object Properties <Bit, name, state>:\n";
-		for (std::map<std::string, size_t>::iterator i = objectPropertyMap.begin(); i != objectPropertyMap.end(); i++)
-		{
-			std::string state = (objectProperties.getProperty(i->first) == true) ? "true" : "false";
-			results += std::to_string(i->second) + ' ' + i->first + ' ' + state + '\n';
-		}
-		results.pop_back();
-		return results;
-	}
+	std::string getFullPropertyString();
 
 protected:
 	PropertyMap<32> objectProperties;
@@ -74,10 +37,7 @@ protected:
 class AbstractMapper
 {
 public:
-	AbstractMapper()
-	{
-		objectProperties = properties.getObjectProperties();
-	}
+	AbstractMapper() { objectProperties = properties.getObjectProperties(); }
 
 	virtual GLuint getShaderProgramID() = 0;
 	bool getUseCustomShader() { return useCustomShader; }
@@ -88,12 +48,8 @@ public:
 	virtual void update() = 0;
 
 	// Binds the shader program
-	void use(Renderer* ren)
-	{
-		if (!useCustomShader)
-			useShader(ren);
-	}
-	virtual void useShader(Renderer* ren) = 0;
+	void use(Renderer* ren);
+	virtual void useShader(std::string shaderGroup) = 0;
 
 	virtual void draw(Renderer* ren) = 0;
 

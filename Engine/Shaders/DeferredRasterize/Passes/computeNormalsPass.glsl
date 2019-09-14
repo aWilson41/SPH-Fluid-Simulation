@@ -1,9 +1,11 @@
+// Computes the normals in world space given a depth image
 #version 460
 
 layout(binding = 0) uniform sampler2D inputTex;
 
 uniform float maxDepth;
 uniform mat4x4 invProj;
+uniform mat4x4 invView;
 uniform float nearZ;
 uniform float farZ;
 uniform vec2 texelSize;
@@ -14,16 +16,16 @@ out vec3 fragNormal;
 
 float unlinearizeDepth(float z)
 {
-	return -((2.0f * nearZ * farZ / z) - farZ - nearZ) / (farZ - nearZ);
+	return -(2.0f * nearZ * farZ / z - farZ - nearZ) / (farZ - nearZ);
 }
 
 vec3 getEyePos(vec2 texCoord)
 {
 	float z = unlinearizeDepth(texture(inputTex, texCoord).r);
-	vec4 clipPos = vec4(texCoord * 2.0f - 1.0f, 2.0f * z - 1.0f, 1.0f);
-	vec4 viewPos = invProj * clipPos;
-
-	return viewPos.xyz / viewPos.w;
+	vec4 clipPos = vec4(vec3(texCoord, z) * 2.0f - 1.0f, 1.0f);
+	vec4 viewPosProj = invProj * clipPos;
+	vec4 viewPos = viewPosProj / viewPosProj.w;
+	return vec3(invView * viewPos);
 }
 
 void main()

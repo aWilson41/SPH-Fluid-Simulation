@@ -6,16 +6,15 @@ PROJECT(SPHFluidSim)
 #message(WARNING "${CMAKE_SOURCE_DIR}/CMakeFiles/")
 
 # Glob all the files together for use
-file(GLOB H_FILES *.h)
-file(GLOB CPP_FILES *.cpp)
+file(GLOB MAIN_FILES *.h *.cpp)
 file(GLOB_RECURSE SHADER_DIRECT_FILES Engine/Shaders/DirectRasterize/*glsl)
 file(GLOB_RECURSE SHADER_DEFERRED_FILES Engine/Shaders/DeferredRasterize/*glsl)
 file(GLOB_RECURSE SHADER_RAYCAST_FILES Engine/Shaders/Raycast/*glsl)
 file(GLOB_RECURSE SHADER_RAYTRACE_FILES Engine/Shaders/Raytrace/*glsl)
 file(GLOB_RECURSE SHADER_PATHTRACE_FILES Engine/Shaders/Pathtrace/*glsl)
 set(SHADER_FILES ${SHADER_DIRECT_FILES} ${SHADER_DEFERRED_FILES} ${SHADER_RAYCAST_FILES} ${SHADER_RAYTRACE_FILES} ${SHADER_PATHTRACE_FILES})
-file(GLOB IMAGERSC *png)
 file(GLOB ENGINE_FILES Engine/*h Engine/*cpp)
+file(GLOB ENGINE_RENDERING_FILES Engine/Rendering/*.h Engine/Rendering/*.cpp)
 file(GLOB LODEPNG_FILES Engine/LodePNG/lodepng.h Engine/LodePNG/lodepng.cpp)
 
 # Find all the packages and stuff
@@ -31,9 +30,9 @@ find_path(GLFW
 	PATHS ENV PATH)
 
 #include the directories
-include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} ${GLM}/glm ${GLEW}/include ${GLFW}/include ${OPENGL_INCLUDE_DIRS})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/Engine ${CMAKE_CURRENT_SOURCE_DIR}/Engine/Rendering ${CMAKE_CURRENT_BINARY_DIR} ${GLM}/glm ${GLEW}/include ${GLFW}/include ${OPENGL_INCLUDE_DIRS})
 
-add_executable(SPHFluidSim WIN32 ${CPP_FILES} ${H_FILES} ${RESSrcs} ${IMAGERSC} ${SHADER_FILES} ${ENGINE_FILES} ${LODEPNG_FILES})
+add_executable(SPHFluidSim WIN32 ${MAIN_FILES} ${RESSrcs} ${SHADER_FILES} ${ENGINE_FILES} ${ENGINE_RENDERING_FILES} ${LODEPNG_FILES})
 
 target_link_libraries(SPHFluidSim 
 	debug ${GLEW}/lib/Release/x64/glew32.lib optimized ${GLEW}/lib/Release/x64/glew32.lib
@@ -70,6 +69,7 @@ add_custom_command(
 			
 # Sort these into folders/filters
 source_group("Engine" FILES ${ENGINE_FILES})
+source_group("Engine\\Rendering" FILES ${ENGINE_RENDERING_FILES})
 source_group("Resources" FILES ${IMAGERSC})
 source_group("Engine\\Shaders\\Direct" FILES ${SHADER_DIRECT_FILES})
 source_group("Engine\\Shaders\\Deferred" FILES ${SHADER_DEFERRED_FILES})

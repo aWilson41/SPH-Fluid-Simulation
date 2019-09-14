@@ -47,6 +47,12 @@ void ComputeNormalsPass::render(DeferredRenderer* ren)
 		glm::mat4 invProj = glm::inverse(ren->getCamera()->proj);
 		glUniformMatrix4fv(invProjLocation, 1, GL_FALSE, &invProj[0][0]);
 	}
+	GLuint invViewLocation = glGetUniformLocation(shaderID, "invView");
+	if (invViewLocation != -1)
+	{
+		glm::mat4 invView = glm::inverse(ren->getCamera()->view);
+		glUniformMatrix4fv(invViewLocation, 1, GL_FALSE, &invView[0][0]);
+	}
 	GLuint texelSizeLocation = glGetUniformLocation(shaderID, "texelSize");
 	if (texelSizeLocation != -1)
 		glUniform2f(texelSizeLocation, 1.0f / fboWidth, 1.0f / fboHeight);

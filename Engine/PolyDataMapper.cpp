@@ -183,13 +183,13 @@ void PolyDataMapper::updateBuffer()
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
-void PolyDataMapper::useShader(Renderer* ren)
+void PolyDataMapper::useShader(std::string shaderGroup)
 {
 	if (polyData == nullptr || vaoID == -1)
 		return;
 
 	if (objectProperties->isOutOfDate())
-		shaderProgram = Shaders::getShader(ren, "PolyDataMapper", &properties);
+		shaderProgram = Shaders::getShader(shaderGroup, "PolyDataMapper", &properties);
 
 	glUseProgram(shaderProgram->getProgramID());
 }

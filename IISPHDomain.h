@@ -1,6 +1,6 @@
 #pragma once
-#include "Engine/MathHelper.h"
 #include "Particle.h"
+#include <MathHelper.h>
 
 // IISPH from the paper "Implicit Incompressible SPH" which describes the use of Relaxed Jacobi method to optimize densities
 // for incompressible flow.

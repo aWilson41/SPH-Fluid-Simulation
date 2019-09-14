@@ -15,7 +15,7 @@ namespace Shaders
 	extern ShaderProgram* loadComputeShader(std::string shaderName, std::string path);
 	extern ShaderProgram* loadComputeShader(std::string shaderName, std::vector<std::string> paths);
 
-	extern ShaderProgram* getShader(Renderer* ren, std::string mapperName, ShaderProperties* properties);
+	extern ShaderProgram* getShader(std::string shaderGroup, std::string mapperName, ShaderProperties* properties);
 
 	extern void deleteShaders();
 };

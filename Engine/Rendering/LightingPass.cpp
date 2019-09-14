@@ -47,12 +47,15 @@ void LightingPass::render(DeferredRenderer* ren)
 	GLuint viewDirLocation = glGetUniformLocation(shaderID, "viewDir");
 	if (viewDirLocation != -1)
 		glUniform3fv(viewDirLocation, 1, &ren->getCamera()->getLookDir()[0]);
-	GLuint invProjLocation = glGetUniformLocation(shaderID, "invProj");
-	if (invProjLocation != -1)
+	GLuint invViewProjLocation = glGetUniformLocation(shaderID, "invViewProj");
+	if (invViewProjLocation != -1)
 	{
-		glm::mat4 invProj = glm::inverse(ren->getCamera()->proj);
-		glUniformMatrix4fv(invProjLocation, 1, GL_FALSE, &invProj[0][0]);
+		glm::mat4 invViewProj = glm::inverse(ren->getCamera()->proj * ren->getCamera()->view);
+		glUniformMatrix4fv(invViewProjLocation, 1, GL_FALSE, &invViewProj[0][0]);
 	}
+	GLuint eyePosLocation = glGetUniformLocation(shaderID, "eyePos");
+	if (eyePosLocation != -1)
+		glUniform3fv(eyePosLocation, 1, &ren->getCamera()->getEyePos()[0]);
 
 	// Bind the textures from the last pass
 	glActiveTexture(GL_TEXTURE0);
