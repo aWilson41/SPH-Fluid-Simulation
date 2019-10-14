@@ -9,12 +9,10 @@
 #include <RenderWindow.h>
 #include <TrackballCamera.h>
 
-#include <BilateralRBlurPass.h>
-#include <ComputeNormalsPass.h>
-#include <CubeMapPass.h>
-#include <DepthToRPass.h>
+#include <UnsharpMaskingPass.h>
 #include <GeometryPass.h>
 #include <LightingPass.h>
+#include <DepthToRPass.h>
 
 int main(int argc, char *argv[])
 {
@@ -29,7 +27,7 @@ int main(int argc, char *argv[])
 	cam.setFocalPt(0.001505f, -0.000141f, 0.014044f);
 
 
-	// Create the renderer
+	// Create the renderer with default passes
 	DeferredRenderer ren(false);
 	//RayTraceRenderer ren;
 	//Renderer ren;
@@ -45,6 +43,31 @@ int main(int argc, char *argv[])
 	iren.setCamera(&cam);
 	renWindow.setInteractor(&iren);
 
+	// Setup the render passes manually so we can insert an unsharp masking for AO
+	GeometryPass* geomPass = new GeometryPass();
+
+	LightingPass* lightPass = new LightingPass();
+	lightPass->setPosInput(geomPass->getPosOutput());
+	lightPass->setNormalInput(geomPass->getNormalOutput());
+	lightPass->setDiffuseInput(geomPass->getDiffuseOutput());
+	lightPass->setAmbientInput(geomPass->getAmbientOutput());
+
+	// Linearize depth and put into r color buffer
+	DepthToRPass* depthPass = new DepthToRPass();
+	depthPass->setDepthInput(geomPass->getDepthOutput());
+
+	UnsharpMaskingPass* aoPass = new UnsharpMaskingPass();
+	aoPass->setRadiusRatio(0.0025f);
+	aoPass->setSigma(5.0f);
+	aoPass->setDarknessFactor(30.0f);
+	aoPass->setColorInput(lightPass->getColorOutput());
+	aoPass->setDepthInput(depthPass->getColorOutput());
+	
+	ren.addPass(geomPass);
+	ren.addPass(lightPass);
+	ren.addPass(depthPass);
+	ren.addPass(aoPass);
+
 	// Setup a ground plane
 	PlaneSource planeSource;
 	planeSource.update();
@@ -53,61 +76,10 @@ int main(int argc, char *argv[])
 	planeMapper.setMaterial(ren.getMaterial(0));
 	planeMapper.setModelMatrix(MathHelp::matrixScale(5.0f, 1.0f, 5.0f));
 	planeMapper.update();
-	//ren.addRenderItem(&planeMapper);
-
-
-	// Render a cubemap once without fluid
-	//CubeMapPass* cubeMapPass = new CubeMapPass();
-	//cubeMapPass->setPassDim(128, 128);
-
-	//ren.addPass(cubeMapPass);
-
-	//// Do the initial render
-	//renWindow.render();
-
-	//// Remove the pass
-	//ren.removePass(cubeMapPass);
+	ren.addRenderItem(&planeMapper);
 
 	// Add the fluid
 	ren.addRenderItem(iren.getParticleMapper());
-
-
-	// Setup the passes for the main loop
-	// Render the geometry into a renderbuffer
-	GeometryPass* geomPass = new GeometryPass();
-
-	//// Do the lighting pass
-	//LightingPass* lightPass = new LightingPass();
-	//lightPass->setPosInput(geomPass->getPosOutput());
-	//lightPass->setNormalInput(geomPass->getNormalOutput());
-	//lightPass->setDiffuseInput(geomPass->getDiffuseOutput());
-	//lightPass->setAmbientInput(geomPass->getAmbientOutput());
-
-	// Write the depth to a single component color buffer and linearize
-	DepthToRPass* depthRenderPass = new DepthToRPass();
-	depthRenderPass->setDepthInput(geomPass->getDepthOutput());
-
-	// Do an edge preserved blur on the linearized depth image
-	BilateralRBlurPass* depthBlurPass = new BilateralRBlurPass();
-	depthBlurPass->setColorInput(depthRenderPass->getColorOutput());
-
-	// Reconstruct normals from the blurred depth
-	ComputeNormalsPass* depthNormalsPass = new ComputeNormalsPass();
-	depthNormalsPass->setColorInput(depthBlurPass->getColorOutput());
-
-	// Re-render with new normals, specularity, fresnel
-	LightingPass* lightPass2 = new LightingPass();
-	lightPass2->setPosInput(geomPass->getPosOutput());
-	lightPass2->setNormalInput(depthNormalsPass->getNormalOutput());
-	lightPass2->setDiffuseInput(geomPass->getDiffuseOutput());
-	lightPass2->setAmbientInput(geomPass->getAmbientOutput());
-
-	ren.addPass(geomPass);
-	//ren.addPass(lightPass);
-	ren.addPass(depthRenderPass);
-	ren.addPass(depthBlurPass);
-	ren.addPass(depthNormalsPass);
-	ren.addPass(lightPass2);
 
 	// Update loop
 	while (renWindow.isActive())
