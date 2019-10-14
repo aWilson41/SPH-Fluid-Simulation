@@ -1,6 +1,6 @@
 #include "ThreadedSPHDomain.h"
 #include "Constants.h"
-#include "Engine/StdMultiThreader.h"
+#include <StdMultiThreader.h>
 
 // Poly6 Kernel
 static GLfloat kernel(glm::vec3 x)

@@ -2,42 +2,18 @@ cmake_minimum_required(VERSION 3.0.2)
  
 PROJECT(SPHFluidSim)
 
-#set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/CMakeFiles")
-#message(WARNING "${CMAKE_SOURCE_DIR}/CMakeFiles/")
+set(SPHFluidSim_CMAKE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/CMake")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${SPHFluidSim_CMAKE_DIR})
 
 # Glob all the files together for use
 file(GLOB MAIN_FILES *.h *.cpp)
-file(GLOB_RECURSE SHADER_DIRECT_FILES Engine/Shaders/DirectRasterize/*glsl)
-file(GLOB_RECURSE SHADER_DEFERRED_FILES Engine/Shaders/DeferredRasterize/*glsl)
-file(GLOB_RECURSE SHADER_RAYCAST_FILES Engine/Shaders/Raycast/*glsl)
-file(GLOB_RECURSE SHADER_RAYTRACE_FILES Engine/Shaders/Raytrace/*glsl)
-file(GLOB_RECURSE SHADER_PATHTRACE_FILES Engine/Shaders/Pathtrace/*glsl)
-set(SHADER_FILES ${SHADER_DIRECT_FILES} ${SHADER_DEFERRED_FILES} ${SHADER_RAYCAST_FILES} ${SHADER_RAYTRACE_FILES} ${SHADER_PATHTRACE_FILES})
-file(GLOB ENGINE_FILES Engine/*h Engine/*cpp)
-file(GLOB ENGINE_RENDERING_FILES Engine/Rendering/*.h Engine/Rendering/*.cpp)
-file(GLOB LODEPNG_FILES Engine/LodePNG/lodepng.h Engine/LodePNG/lodepng.cpp)
 
-# Find all the packages and stuff
-find_package(OpenGL REQUIRED)
-find_path(GLM 
-	NAMES "/glm" 
-	PATHS ENV PATH)
-find_path(GLEW 
-	NAMES "/include/GL/glew.h"
-	PATHS ENV PATH)
-find_path(GLFW
-	NAMES "/include/GLFW"
-	PATHS ENV PATH)
+# Find the packages
+add_subdirectory(GLEngine)
 
-#include the directories
-include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/Engine ${CMAKE_CURRENT_SOURCE_DIR}/Engine/Rendering ${CMAKE_CURRENT_BINARY_DIR} ${GLM}/glm ${GLEW}/include ${GLFW}/include ${OPENGL_INCLUDE_DIRS})
-
-add_executable(SPHFluidSim WIN32 ${MAIN_FILES} ${RESSrcs} ${SHADER_FILES} ${ENGINE_FILES} ${ENGINE_RENDERING_FILES} ${LODEPNG_FILES})
-
-target_link_libraries(SPHFluidSim 
-	debug ${GLEW}/lib/Release/x64/glew32.lib optimized ${GLEW}/lib/Release/x64/glew32.lib
-	debug ${GLFW}/lib/glfw3d.lib optimized ${GLFW}/lib/glfw3.lib
-	debug ${OPENGL_LIBRARIES} optimized ${OPENGL_LIBRARIES})
+add_executable(SPHFluidSim WIN32 ${MAIN_FILES})
+target_include_directories(SPHFluidSim PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
+target_link_libraries(SPHFluidSim PUBLIC GLEngine)
 
 if(WIN32) # Check if we are on Windows
   if(MSVC) # Check if we are using the Visual Studio compiler
@@ -49,31 +25,3 @@ if(WIN32) # Check if we are on Windows
 	add_definitions(/MP)
   endif()
 endif()
-
-# Add a build command to copy the shaders to the build directory post build
-add_custom_command(
-	TARGET SPHFluidSim POST_BUILD
-	COMMAND ${CMAKE_COMMAND} -E copy_directory
-			${CMAKE_SOURCE_DIR}/Engine/Shaders
-			${CMAKE_CURRENT_BINARY_DIR}/Shaders)
-add_custom_command(
-	TARGET SPHFluidSim POST_BUILD
-	COMMAND ${CMAKE_COMMAND} -E copy_directory
-			${CMAKE_SOURCE_DIR}/Engine/Shaders
-			${CMAKE_CURRENT_BINARY_DIR}/Release/Shaders)
-add_custom_command(
-	TARGET SPHFluidSim POST_BUILD
-	COMMAND ${CMAKE_COMMAND} -E copy_directory
-			${CMAKE_SOURCE_DIR}/Engine/Shaders
-			${CMAKE_CURRENT_BINARY_DIR}/Debug/Shaders)
-			
-# Sort these into folders/filters
-source_group("Engine" FILES ${ENGINE_FILES})
-source_group("Engine\\Rendering" FILES ${ENGINE_RENDERING_FILES})
-source_group("Resources" FILES ${IMAGERSC})
-source_group("Engine\\Shaders\\Direct" FILES ${SHADER_DIRECT_FILES})
-source_group("Engine\\Shaders\\Deferred" FILES ${SHADER_DEFERRED_FILES})
-source_group("Engine\\Shaders\\Raycast" FILES ${SHADER_RAYCAST_FILES})
-source_group("Engine\\Shaders\\Raytrace" FILES ${SHADER_RAYTRACE_FILES})
-source_group("Engine\\Shaders\\Pathtrace" FILES ${SHADER_PATHTRACE_FILES})
-source_group("Engine\\LodePNG" FILES ${LODEPNG_FILES})

@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
 	planeMapper.setMaterial(ren.getMaterial(0));
 	planeMapper.setModelMatrix(MathHelp::matrixScale(5.0f, 1.0f, 5.0f));
 	planeMapper.update();
-	ren.addRenderItem(&planeMapper);
+	//ren.addRenderItem(&planeMapper);
 
 
 	// Render a cubemap once without fluid
