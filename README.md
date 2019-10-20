@@ -1,12 +1,12 @@
 # SPH-Fluid-Simulation
-SPH Fluid Simulation. See "Particle-Based Fluid Simulation for Interactive Applications" for details. Contains 4 versions of SPH implemented mostly entirely separately for readability.
+SPH Fluid Simulation. See "Particle-Based Fluid Simulation for Interactive Applications" for details. Contains 4 versions of SPH implemented separately for readability. SPHDomain is a "base" one.
 
-* SPHDoimain: Single thread. No binning. Nice for learning. Not recommended.
+* SPHDomain: Single thread. No binning. Nice for learning. Not recommended.
 * ThreadedSPHDomain: Multi threaded with standard namespace threads. Threads spawn at start of simulation. Only gets faster at higher particle counts.
 * ThreadPoolSPHDomain: Same as above but maintains the threads through the simulation.
 * GLSLSPHDomain: Compute shader SPH. In progress.
 
-Repository designed with readability in mind so code is almost entirely duplicate for each of these 4 methods. Best to learn from SPHDomain. ThreadPoolSPHDomain should be preferred over ThreadedSPHDomain as it removes the overhead with starting threads by keep them alive and waiting. For offline computations (not real time) it wouldn't really matter which you use.
+ThreadPoolSPHDomain should be preferred over ThreadedSPHDomain as it removes the overhead with starting threads by keeping them alive and waiting. For offline computations (not real time) it doesn't matter which threaded implementation you use, as thread overhead is negligible at that point. This repo also includes my own graphics abstraction as a submodule.
 
 Currently working on IISPH implementation.
 
@@ -16,9 +16,7 @@ Requires: GLM, GLFW, GLEW
 
 Build with CMake using the provided CMakeLists.txt.
 
-This also includes my own graphics abstraction GLEngine as a submodule. See Constants.h for parameters and controls of the simulation.
-
-Controls:
+Controls (see Constants.h for parameters & more options):
 
 * Left Click: Rotate View
 * Right Click: Interact with simulation
