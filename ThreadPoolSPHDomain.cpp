@@ -1,6 +1,6 @@
-#include "ThreadedSPHDomain.h"
+#include "ThreadPoolSPHDomain.h"
 #include "Constants.h"
-#include <StdMultiThreader.h>
+#include <StdMultiThreaderPool.h>
 
 // Poly6 Kernel
 static GLfloat kernel(glm::vec3 x)
@@ -35,25 +35,35 @@ static int calcIndex(int x, int y, int z, int width, int height) { return x + wi
 
 static void threadedCalcDensity(ThreadInfo* threadInfo)
 {
-	ThreadedSPHDomain* sphDomain = static_cast<ThreadedSPHDomain*>(threadInfo->UserData);
+	ThreadPoolSPHDomain* sphDomain = static_cast<ThreadPoolSPHDomain*>(threadInfo->UserData);
 	sphDomain->calcDensity(threadInfo->ThreadID, threadInfo->NumberOfThreads);
 }
 static void threadedCalcForces(ThreadInfo* threadInfo)
 {
-	ThreadedSPHDomain* sphDomain = static_cast<ThreadedSPHDomain*>(threadInfo->UserData);
+	ThreadPoolSPHDomain* sphDomain = static_cast<ThreadPoolSPHDomain*>(threadInfo->UserData);
 	sphDomain->calcForces(threadInfo->ThreadID, threadInfo->NumberOfThreads);
 }
 static void threadedIntegrate(ThreadInfo* threadInfo)
 {
-	ThreadedSPHDomain* sphDomain = static_cast<ThreadedSPHDomain*>(threadInfo->UserData);
+	ThreadPoolSPHDomain* sphDomain = static_cast<ThreadPoolSPHDomain*>(threadInfo->UserData);
 	sphDomain->integrate(threadInfo->ThreadID, threadInfo->NumberOfThreads);
 }
 
-void ThreadedSPHDomain::initParticles(std::vector<SPHParticle> particles, glm::vec3 origin, glm::vec3 size, GLfloat bufferRatio)
+ThreadPoolSPHDomain::ThreadPoolSPHDomain()
 {
-	ThreadedSPHDomain::particles = particles;
-	ThreadedSPHDomain::origin = origin;
-	ThreadedSPHDomain::size = size;
+	threader = new StdMultiThreaderPool();
+	threader->start();
+}
+ThreadPoolSPHDomain::~ThreadPoolSPHDomain()
+{
+	delete threader;
+}
+
+void ThreadPoolSPHDomain::initParticles(std::vector<SPHParticle> particles, glm::vec3 origin, glm::vec3 size, GLfloat bufferRatio)
+{
+	ThreadPoolSPHDomain::particles = particles;
+	ThreadPoolSPHDomain::origin = origin;
+	ThreadPoolSPHDomain::size = size;
 	bounds[0] = origin.x;
 	bounds[1] = origin.x + size.x;
 	bounds[2] = origin.y;
@@ -77,7 +87,7 @@ void ThreadedSPHDomain::initParticles(std::vector<SPHParticle> particles, glm::v
 }
 
 // Calculate, density, pressures, and save the neighbors
-void ThreadedSPHDomain::calcDensity(int threadID, int numThreads)
+void ThreadPoolSPHDomain::calcDensity(int threadID, int numThreads)
 {
 	// Calculate the density and pressure between particles using the local areas
 	for (UINT i = threadID; i < particles.size(); i += numThreads)
@@ -119,7 +129,7 @@ void ThreadedSPHDomain::calcDensity(int threadID, int numThreads)
 	}
 }
 
-void ThreadedSPHDomain::calcForces(int threadID, int numThreads)
+void ThreadPoolSPHDomain::calcForces(int threadID, int numThreads)
 {
 	glm::vec3 g = glm::vec3(0.0f, -9.8f, 0.0f);
 	for (UINT i = threadID; i < particles.size(); i += numThreads)
@@ -145,7 +155,7 @@ void ThreadedSPHDomain::calcForces(int threadID, int numThreads)
 	}
 }
 
-void ThreadedSPHDomain::integrate(int threadID, int numThreads)
+void ThreadPoolSPHDomain::integrate(int threadID, int numThreads)
 {
 	// Integrate the velocity and position and do collision
 	for (UINT i = threadID; i < particles.size(); i += numThreads)
@@ -157,7 +167,7 @@ void ThreadedSPHDomain::integrate(int threadID, int numThreads)
 	}
 }
 
-void ThreadedSPHDomain::collision(glm::vec3 pos, glm::vec3& v)
+void ThreadPoolSPHDomain::collision(glm::vec3 pos, glm::vec3& v)
 {
 	// Collision
 	glm::vec3 normal = glm::vec3(0.0f);
@@ -232,9 +242,9 @@ void ThreadedSPHDomain::collision(glm::vec3 pos, glm::vec3& v)
 	}
 }
 
-void ThreadedSPHDomain::update(GLfloat dt)
+void ThreadPoolSPHDomain::update(GLfloat dt)
 {
-	ThreadedSPHDomain::dt = dt;
+	ThreadPoolSPHDomain::dt = dt;
 
 	// Bin the particles into local areas
 	bins = std::vector<std::vector<SPHParticle*>>(gridWidth * gridHeight * gridDepth);
@@ -248,11 +258,10 @@ void ThreadedSPHDomain::update(GLfloat dt)
 		bins[binIndex].push_back(p);
 	}
 
-	StdMultiThreader threader;
-	threader.setMethod(threadedCalcDensity, this);
-	threader.executeComplete();
-	threader.setMethod(threadedCalcForces, this);
-	threader.executeComplete();
-	threader.setMethod(threadedIntegrate, this);
-	threader.executeComplete();
+	threader->setMethod(threadedCalcDensity, this);
+	threader->execute();
+	threader->setMethod(threadedCalcForces, this);
+	threader->execute();
+	threader->setMethod(threadedIntegrate, this);
+	threader->execute();
 }

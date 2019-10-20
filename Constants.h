@@ -5,13 +5,16 @@
 static const GLuint NUMFRAMES = 500;
 //#define OUTPUTFRAMES
 //#define TIMER
-// Note: Multithreading only takes affect (becomes faster) at higher particle counts 
-// (differs for everyone. For me it doesn't start doing better till like count>~60k)
-//#define MULTITHREAD
-//#define IISPH
 
+// Note: Multithreading without pooling only becomes faster at higher particle counts.
+// Note: Pooling becomes negligble when computing offline (not real time)
+#define MULTITHREAD
+#define POOLTHREADS
+//#define IISPH // IISPH not finished
+
+// Note: timestep is fixed
 static const GLuint FPS = 60;
-static const GLuint SUBSTEPS = 7; // Increase the substeps as particle size decreases
+static const GLuint SUBSTEPS = 8;
 static const GLfloat TIMESCALE = 1.0f;
 static const GLfloat TIMESTEP = TIMESCALE / (FPS * SUBSTEPS);
 
@@ -29,7 +32,7 @@ static const GLfloat REST_DENSITY = 1.225f; // Resting density of the fluid kg/m
 static const GLfloat FRICTION = 0.05f;
 
 // Particle diameter in meters
-static const GLfloat h = 0.06f;
+static const GLfloat h = 0.08f;
 static const GLfloat r = h * 0.5f;
 static const GLfloat PARTICLE_VOLUME = (4.0f / 3.0f) * PI * r * r * r;
 static const GLfloat PARTICLE_MASS = PARTICLE_VOLUME * REST_DENSITY;

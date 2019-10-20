@@ -8,6 +8,7 @@ class Renderer;
 class SphereSource;
 class SPHDomain;
 class ThreadedSPHDomain;
+class ThreadPoolSPHDomain;
 
 class SPHInteractor : public TrackballCameraInteractor
 {
@@ -30,10 +31,14 @@ protected:
 	IISPHDomain* sphDomain = nullptr;
 #else
 	#ifdef MULTITHREAD
-		ThreadedSPHDomain* sphDomain = nullptr;
+		#ifdef POOLTHREADS
+			ThreadPoolSPHDomain* sphDomain = nullptr;
+		#else
+			ThreadedSPHDomain* sphDomain = nullptr;
+		#endif
 	#else
 		SPHDomain* sphDomain = nullptr;
-#endif
+	#endif
 #endif
 
 	Renderer* ren = nullptr;

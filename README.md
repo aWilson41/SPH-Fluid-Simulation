@@ -1,5 +1,14 @@
 # SPH-Fluid-Simulation
-SPH Fluid Simulation. See "Particle-Based Fluid Simulation for Interactive Applications" for details. Contains both a threaded and single threaded version of the solver. Though you can control the number of threads easily. The single threaded class is just kept for readability. A simple binning is used to speed up the algorithm a bit. Multithreading really only takes affect (becomes faster) at higher particle counts.
+SPH Fluid Simulation. See "Particle-Based Fluid Simulation for Interactive Applications" for details. Contains 4 versions of SPH implemented mostly entirely separately for readability.
+
+SPHDoimain: Single thread. No binning. Nice for learning. Not recommended.
+ThreadedSPHDomain: Multi threaded with standard namespace threads. Threads spawn at start of simulation. Only gets faster at higher particle counts.
+ThreadPoolSPHDomain: Same as above but maintains the threads through the simulation.
+GLSLSPHDomain: Compute shader SPH.
+
+
+
+Though you can control the number of threads easily. The single threaded class is just kept for readability. A simple binning is used to speed up the algorithm a bit. Multithreading really only takes affect (becomes faster) at higher particle counts.
 
 Currently working on IISPH implementation.
 

@@ -1,12 +1,20 @@
 #include "SPHInteractor.h"
-#ifdef IISPH
-#include "IISPHDomain.h"
-#endif
-#include "SPHDomain.h"
 #include "SPHRasterizer.h"
+
+#ifdef IISPH
+IISPHDomain* sphDomain = nullptr;
+#else
 #ifdef MULTITHREAD
+#ifdef POOLTHREADS
+#include "ThreadPoolSPHDomain.h"
+#else
 #include "ThreadedSPHDomain.h"
 #endif
+#else
+#include "SPHDomain.h"
+#endif
+#endif
+
 #include <chrono>
 #include <Geometry3D.h>
 #include <GLFW/glfw3.h>
@@ -93,7 +101,11 @@ SPHInteractor::SPHInteractor()
 	sphDomain = new IISPHDomain();
 #else
 	#ifdef MULTITHREAD
-		sphDomain = new ThreadedSPHDomain();
+		#ifdef POOLTHREADS
+			sphDomain = new ThreadPoolSPHDomain();
+		#else
+			sphDomain = new ThreadedSPHDomain();
+		#endif
 	#else
 		sphDomain = new SPHDomain();
 #endif
