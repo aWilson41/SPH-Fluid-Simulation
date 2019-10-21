@@ -3,12 +3,20 @@
 #include <TrackballCameraInteractor.h>
 
 class GlyphPolyDataMapper;
-class IISPHDomain;
 class Renderer;
 class SphereSource;
-class SPHDomain;
+
+#if IMPLEMENTATION == MULTI_THREADED
 class ThreadedSPHDomain;
+#elif IMPLEMENTATION == MULTI_THREADED_POOL
 class ThreadPoolSPHDomain;
+#elif IMPLEMENTATION == GLSL_COMPUTE_SHADER
+class GLSLSPHDomain;
+#elif IMPLEMENTATION == IISPH
+class IISPHDomain;
+#else
+class SPHDomain;
+#endif
 
 class SPHInteractor : public TrackballCameraInteractor
 {
@@ -27,18 +35,16 @@ public:
 	GlyphPolyDataMapper* getParticleMapper() { return particleMapper; }
 
 protected:
-#ifdef IISPH
+#if IMPLEMENTATION == MULTI_THREADED
+	ThreadedSPHDomain* sphDomain = nullptr;
+#elif IMPLEMENTATION == MULTI_THREADED_POOL
+	ThreadPoolSPHDomain* sphDomain = nullptr;
+#elif IMPLEMENTATION == GLSL_COMPUTE_SHADER
+	GLSLSPHDomain* sphDomain = nullptr;
+#elif IMPLEMENTATION == IISPH
 	IISPHDomain* sphDomain = nullptr;
 #else
-	#ifdef MULTITHREAD
-		#ifdef POOLTHREADS
-			ThreadPoolSPHDomain* sphDomain = nullptr;
-		#else
-			ThreadedSPHDomain* sphDomain = nullptr;
-		#endif
-	#else
-		SPHDomain* sphDomain = nullptr;
-	#endif
+	SPHDomain* sphDomain = nullptr;
 #endif
 
 	Renderer* ren = nullptr;

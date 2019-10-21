@@ -1,18 +1,17 @@
 #include "SPHInteractor.h"
 #include <DeferredRenderer.h>
+#include <DepthToRPass.h>
+#include <GeometryPass.h>
 #include <GlyphPolyDataMapper.h>
 #include <ImageData.h>
+#include <LightingPass.h>
 #include <PhongMaterial.h>
 #include <PlaneSource.h>
 #include <PNGWriter.h>
 #include <RayTraceRenderer.h>
 #include <RenderWindow.h>
 #include <TrackballCamera.h>
-
 #include <UnsharpMaskingPass.h>
-#include <GeometryPass.h>
-#include <LightingPass.h>
-#include <DepthToRPass.h>
 
 int main(int argc, char *argv[])
 {

@@ -1,4 +1,8 @@
+#include "GLSLSPHDomain.h"
+#include "IISPHDomain.h"
 #include "SPHDomain.h"
+#include "ThreadedSPHDomain.h"
+#include "ThreadPoolSPHDomain.h"
 #include "Constants.h"
 
 // Poly6 Kernel

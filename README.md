@@ -4,7 +4,7 @@ SPH Fluid Simulation. See "Particle-Based Fluid Simulation for Interactive Appli
 * SPHDomain: Single thread. No binning. Nice for learning. Not recommended.
 * ThreadedSPHDomain: Multi threaded with standard namespace threads. Threads spawn at start of simulation. Only gets faster at higher particle counts.
 * ThreadPoolSPHDomain: Same as above but maintains the threads through the simulation.
-* GLSLSPHDomain: Compute shader SPH. In progress.
+* GLSLSPHDomain: Compute shader SPH. In progress. Currently uses "megakernels" to dish out different kernels in one compute shader. IE: Uses a task id and branching. Wanting to compare it to subroutines as well as separate kernels/shaders for each step. Maybe expirement with CUDA as well.
 
 ThreadPoolSPHDomain should be preferred over ThreadedSPHDomain as it removes the overhead with starting threads by keeping them alive and waiting. For offline computations (not real time) it doesn't matter which threaded implementation you use, as thread overhead is negligible at that point. This repo also includes my own graphics abstraction as a submodule.
 

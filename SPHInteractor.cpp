@@ -1,18 +1,16 @@
 #include "SPHInteractor.h"
 #include "SPHRasterizer.h"
 
-#ifdef IISPH
-IISPHDomain* sphDomain = nullptr;
-#else
-#ifdef MULTITHREAD
-#ifdef POOLTHREADS
-#include "ThreadPoolSPHDomain.h"
-#else
+#if IMPLEMENTATION == MULTI_THREADED
 #include "ThreadedSPHDomain.h"
-#endif
+#elif IMPLEMENTATION == MULTI_THREADED_POOL
+#include "ThreadPoolSPHDomain.h"
+#elif IMPLEMENTATION == GLSL_COMPUTE_SHADER
+#include "GLSLSPHDomain.h"
+#elif IMPLEMENTATION == IISPH
+#include "IISPHDomain.h"
 #else
 #include "SPHDomain.h"
-#endif
 #endif
 
 #include <chrono>
@@ -97,19 +95,18 @@ SPHInteractor::SPHInteractor()
 	colorFunc.push_back(std::tuple<GLfloat, glm::vec3>(1.5f, glm::vec3(1.0f, 1.0f, 1.0f)));
 
 	// Setup the SPHDomain for simulation
-#ifdef IISPH
+#if IMPLEMENTATION == MULTI_THREADED
+	sphDomain = new ThreadedSPHDomain();
+#elif IMPLEMENTATION == MULTI_THREADED_POOL
+	sphDomain = new ThreadPoolSPHDomain();
+#elif IMPLEMENTATION == GLSL_COMPUTE_SHADER
+	sphDomain = new GLSLSPHDomain();
+#elif IMPLEMENTATION == IISPH
 	sphDomain = new IISPHDomain();
 #else
-	#ifdef MULTITHREAD
-		#ifdef POOLTHREADS
-			sphDomain = new ThreadPoolSPHDomain();
-		#else
-			sphDomain = new ThreadedSPHDomain();
-		#endif
-	#else
-		sphDomain = new SPHDomain();
+	sphDomain = new SPHDomain();
 #endif
-#endif
+
 	sphDomain->initParticles(particles, bounds.origin() - bounds.size() * 0.5f * glm::vec3(1.0f, 0.0f, 1.0f), bounds.size() * glm::vec3(2.0f, 5.0f, 2.0f));// +glm::vec3(1.5f, 0.0f, 0.0f));
 	updateParticleMapper();
 }
@@ -176,22 +173,6 @@ void SPHInteractor::update()
 			}
 		}
 	}
-
-	/*SPHRasterizer rasterizer;
-	rasterizer.setSPHDomain(sphDomain);
-	GLfloat max = sphDomain->bufferSize.x;
-	if (sphDomain->bufferSize.y > max)
-		max = sphDomain->bufferSize.y;
-	else if (sphDomain->bufferSize.z > max)
-		max = sphDomain->bufferSize.z;
-	glm::vec3 size = sphDomain->bufferSize * 2.0f / max;
-	rasterizer.setDim(size.x, size.y, size.z);
-	rasterizer.setSize(sphDomain->bufferSize);
-	rasterizer.update();
-	RawImageWriter writer;
-	writer.setInput(rasterizer.getOutput());
-	writer.setFileName("C:/Users/Andx_/Desktop/rawTest.raw");
-	writer.update();*/
 
 #ifdef OUTPUTFRAMES
 	if (running && writingFrames && iter < NUMFRAMES)

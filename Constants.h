@@ -1,16 +1,18 @@
 #pragma once
 #include <MathHelper.h>
+#define SINGLE_THREADED 0
+#define MULTI_THREADED 1
+#define MULTI_THREADED_POOL 2
+#define GLSL_COMPUTE_SHADER 3
+#define IISPH 4
 
 // Maximum amount of frames allowed to output, only used if output frames is on
 static const GLuint NUMFRAMES = 500;
 //#define OUTPUTFRAMES
 //#define TIMER
 
-// Note: Multithreading without pooling only becomes faster at higher particle counts.
-// Note: Pooling becomes negligble when computing offline (not real time)
-#define MULTITHREAD
-#define POOLTHREADS
-//#define IISPH // IISPH not finished
+// Implementation to use
+#define IMPLEMENTATION GLSL_COMPUTE_SHADER
 
 // Note: timestep is fixed
 static const GLuint FPS = 60;
