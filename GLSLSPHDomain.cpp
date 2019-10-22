@@ -70,20 +70,33 @@ void GLSLSPHDomain::update(GLfloat dt)
 	invokeComputeShader(0, dt);
 
 	// Compute forces
-	//invokeComputeShader(1, dt);
+	invokeComputeShader(1, dt);
 
 	// Integrate + collisions
-	//invokeComputeShader(2, dt);
+	invokeComputeShader(2, dt);
+
+	//glBindBuffer(GL_SHADER_STORAGE_BUFFER, particleBufferID);
+	//GPUParticle* test = static_cast<GPUParticle*>(glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY));
+	//// Copy the resulting positions for the user
+	//for (size_t i = 0; i < particles.size(); i++)
+	//{
+	//	(*particles[i].pos) = test[i].position;
+	//}
+	//glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+	//glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, particleBufferID);
-	GPUParticle* test = static_cast<GPUParticle*>(glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY));
+	GPUParticle* test = new GPUParticle[particles.size()];
+	glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(GPUParticle) * particles.size(), test);
 	// Copy the resulting positions for the user
 	for (size_t i = 0; i < particles.size(); i++)
 	{
 		(*particles[i].pos) = test[i].position;
+		particles[i].velocity = test[i].velocity;
 	}
-	glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+	//glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+	delete[] test;
 }
 
 void GLSLSPHDomain::invokeComputeShader(unsigned int taskID, GLfloat dt)
@@ -109,22 +122,15 @@ void GLSLSPHDomain::invokeComputeShader(unsigned int taskID, GLfloat dt)
 
 	// Bind the buffer
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, particleBufferID);
-	//glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, particleBufferID);
 
 	// Launch the shader
 	static GLint workGroupSize[3] = { -1, -1, -1 };
 	glGetProgramiv(shaderID, GL_COMPUTE_WORK_GROUP_SIZE, workGroupSize);
 	int numGroupsX = nextPowerOfTwo(particles.size()) / workGroupSize[0];
-	glDispatchCompute(256, 1, 1);
+	glDispatchCompute(numGroupsX, 1, 1);
 
 	// Block until complete
-	//glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);
 	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 	glUseProgram(0);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-
-	//glCopyBufferSubData(particleBufferID, particleBufferID, 0, 0, sizeof(GPUParticle) * particles.size());
-
-	//glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, particleBufferID);
-	
 }

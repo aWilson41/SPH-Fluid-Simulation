@@ -9,7 +9,7 @@
 // Maximum amount of frames allowed to output, only used if output frames is on
 static const GLuint NUMFRAMES = 500;
 //#define OUTPUTFRAMES
-//#define TIMER
+#define TIMER
 
 // Implementation to use
 #define IMPLEMENTATION GLSL_COMPUTE_SHADER

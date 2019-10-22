@@ -8,11 +8,18 @@ struct GPUParticle
 {
 public:
 	glm::vec3 position;
+	GLfloat pad1;
+
 	glm::vec3 velocity;
+	GLfloat pad2;
+
 	glm::vec3 acceleration;
-	float mass;
-	float density;
-	float pressure;
+	GLfloat pad3;
+
+	GLfloat mass;
+	GLfloat density;
+	GLfloat pressure;
+	GLfloat pad4;
 };
 
 class GLSLSPHDomain
