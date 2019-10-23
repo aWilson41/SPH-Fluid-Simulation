@@ -20,7 +20,7 @@ static glm::vec3 gradKernel(glm::vec3 x)
 {
 	GLfloat r = glm::length(x);
 	if (r > h || r < 0.0f)
-		return glm::vec3(0.0f, 0.0f, 0.0f);
+		return glm::vec3(0.0f);
 
 	GLfloat l = h - r;
 	return spikyGradCoe * (x / r) * l * l;
@@ -122,25 +122,25 @@ void SPHDomain::calcDensity()
 
 	//for (UINT i = 0; i < particles.size(); i++)
 	//{
-	//	Particle& p1 = particles[i];
+	//	SPHParticle* p1 = &particles[i];
 	//	GLfloat densitySum = 0.0f;
-	//	p1.neighbors.clear();
+	//	p1->neighbors.clear();
 	//	for (UINT j = 0; j < particles.size(); j++)
 	//	{
-	//		Particle* p2 = &particles[j];
-	//		glm::vec3 dist = p1.getPos() - p2->getPos();
+	//		SPHParticle* p2 = &particles[j];
+	//		glm::vec3 dist = p1->getPos() - p2->getPos();
 	//		// IE: If (dist between centers of spheres < r1 + r2). But for our spheres r1=r2 so just use diameter
 	//		if (glm::dot(dist, dist) <= h2)
 	//		{
 	//			if (i != j)
-	//				p1.neighbors.push_back(p2);
+	//				p1->neighbors.push_back(p2);
 	//			densitySum += p2->mass * kernel(dist);
 	//		}
 	//	}
-	//	p1.density = densitySum;
+	//	p1->density = densitySum;
 	//	// Pressure = 0 when density = rest density
 	//	//p1.pressure = STIFFNESS * (p1.density - REST_DENSITY);
-	//	p1.pressure = KAPPA * REST_DENSITY / GAMMA * (std::pow(p1.density / REST_DENSITY, GAMMA) - 1.0f); // Taits formulation
+	//	p1->pressure = KAPPA * REST_DENSITY / GAMMA * (std::pow(p1->density / REST_DENSITY, GAMMA) - 1.0f); // Taits formulation
 	//}
 }
 
@@ -152,7 +152,7 @@ void SPHDomain::calcForces()
 		SPHParticle& p1 = particles[i];
 		glm::vec3 fPressure = glm::vec3(0.0f);
 		glm::vec3 fViscosity = glm::vec3(0.0f);
-
+		GLfloat a = p1.pressure / (p1.density * p1.density);
 		for (UINT j = 0; j < p1.neighbors.size(); j++)
 		{
 			SPHParticle& p2 = *p1.neighbors[j];
@@ -160,7 +160,7 @@ void SPHDomain::calcForces()
 
 			// Pressure force density
 			//fPressure -= p2->mass * (p2->pressure + p1.pressure) / (2.0f * p2->density) * gradKernel(dist);
-			fPressure -= p2.mass * p1.mass * (p1.pressure / (p1.density * p1.density) + p2.pressure / (p2.density * p2.density)) * gradKernel(dist);
+			fPressure -= p2.mass * p1.mass * (a + p2.pressure / (p2.density * p2.density)) * gradKernel(dist);
 
 			// Viscosity force density
 			fViscosity += p2.mass * (p2.velocity - p1.velocity) / p2.density * laplaceKernel(dist);

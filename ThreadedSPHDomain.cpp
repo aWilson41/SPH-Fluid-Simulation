@@ -17,7 +17,7 @@ static glm::vec3 gradKernel(glm::vec3 x)
 {
 	GLfloat r = glm::length(x);
 	if (r > h || r < 0.0f)
-		return glm::vec3(0.0f, 0.0f, 0.0f);
+		return glm::vec3(0.0f);
 
 	GLfloat l = h - r;
 	return spikyGradCoe * (x / r) * l * l;
@@ -127,15 +127,14 @@ void ThreadedSPHDomain::calcForces(int threadID, int numThreads)
 		SPHParticle& p1 = particles[i];
 		glm::vec3 fPressure = glm::vec3(0.0f);
 		glm::vec3 fViscosity = glm::vec3(0.0f);
-
+		GLfloat a = p1.pressure / (p1.density * p1.density);
 		for (UINT j = 0; j < p1.neighbors.size(); j++)
 		{
 			SPHParticle* p2 = p1.neighbors[j];
 			glm::vec3 dist = p1.getPos() - p2->getPos();
 
 			// Pressure force density
-			//fPressure -= p2->mass * (p2->pressure + p1.pressure) / (2.0f * p2->density) * gradKernel(dist);
-			fPressure -= p2->mass * p1.mass * (p1.pressure / (p1.density * p1.density) + p2->pressure / (p2->density * p2->density)) * gradKernel(dist);
+			fPressure -= p2->mass * p1.mass * (a + p2->pressure / (p2->density * p2->density)) * gradKernel(dist);
 
 			// Viscosity force density
 			fViscosity += p2->mass * (p2->velocity - p1.velocity) / p2->density * laplaceKernel(dist);

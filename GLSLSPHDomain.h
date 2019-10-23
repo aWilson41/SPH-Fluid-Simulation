@@ -26,6 +26,10 @@ class GLSLSPHDomain
 {
 public:
 	GLSLSPHDomain();
+	~GLSLSPHDomain()
+	{
+		delete[] gpuParticles;
+	}
 
 public:
 	// Sets the particles and initializes the bounds
@@ -33,17 +37,32 @@ public:
 
 	void update(GLfloat dt);
 
-	void invokeComputeShader(unsigned int taskID, GLfloat dt);
+	void invokePressureProgram();
+	void invokeForcesProgram();
+	void invokeIntegrateProgram(GLfloat dt);
 
 public:
-	ShaderProgram* shaderProgram = nullptr;
+	ShaderProgram* computePressureProgram = nullptr;
+	ShaderProgram* computeForcesProgram = nullptr;
+	ShaderProgram* integrateProgram = nullptr;
 	std::vector<SPHParticle> particles;
 
 	glm::vec3 origin;
 	glm::vec3 size;
 	GLfloat bounds[6] = { -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f };
 
+	GLfloat bufferBounds[6] = { -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f };
+	glm::vec3 bufferSize = glm::vec3(0.0f);
+	int gridWidth = -1;
+	int gridHeight = -1;
+	int gridDepth = -1;
+
 public:
-	std::vector<GPUParticle> gpuParticles;
+	GPUParticle* gpuParticles = nullptr;
 	GLuint particleBufferID = -1;
+
+	//std::vector<GLuint> bins;
+	//GLuint binBufferID = -1;
+	GLuint neighborBufferID = -1;
+	GLuint maxNeighbors = -1;
 };

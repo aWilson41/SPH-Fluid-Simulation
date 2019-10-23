@@ -6,10 +6,12 @@
 #define GLSL_COMPUTE_SHADER 3
 #define IISPH 4
 
+//#define OUTPUTFRAMES // Writes frames as pngs
+#define TIMER // Timer for every frame of the simulation
+//#define STARTIMMEDIATELY // Starts the simulation immediately, no waiting on enter button
+
 // Maximum amount of frames allowed to output, only used if output frames is on
 static const GLuint NUMFRAMES = 500;
-//#define OUTPUTFRAMES
-#define TIMER
 
 // Implementation to use
 #define IMPLEMENTATION GLSL_COMPUTE_SHADER

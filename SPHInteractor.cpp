@@ -107,6 +107,10 @@ SPHInteractor::SPHInteractor()
 	sphDomain = new SPHDomain();
 #endif
 
+#ifdef STARTIMMEDIATELY
+	running = true;
+#endif
+
 	sphDomain->initParticles(particles, bounds.origin() - bounds.size() * 0.5f * glm::vec3(1.0f, 0.0f, 1.0f), bounds.size() * glm::vec3(2.0f, 5.0f, 2.0f));// +glm::vec3(1.5f, 0.0f, 0.0f));
 	updateParticleMapper();
 }
