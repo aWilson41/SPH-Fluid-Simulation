@@ -13,8 +13,28 @@
 #include <TrackballCamera.h>
 #include <UnsharpMaskingPass.h>
 
+#include "KdTree.h"
+#include "PolyData.h"
+#include <time.h>
+
 int main(int argc, char *argv[])
 {
+	srand(static_cast<unsigned int>(time(NULL)));
+	// Kdtree test
+	PolyData polyData;
+	polyData.allocateVertexData(10000, CellType::POINT);
+	glm::vec3* pts = reinterpret_cast<glm::vec3*>(polyData.getVertexData());
+	for (size_t i = 0; i < polyData.getPointCount(); i++)
+	{
+		pts[i] = glm::vec3(rand() % 10000, rand() % 10000, rand() % 10000) / 10000.0f;
+	}
+
+	KdTree tree;
+	tree.setInput(&polyData);
+	tree.update();
+
+
+
 	// Create the window
 	// This has to happen before any gl calls in other objects because 
 	// glfw can only make the opengl context when creating the window.

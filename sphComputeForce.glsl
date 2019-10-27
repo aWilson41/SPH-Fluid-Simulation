@@ -75,28 +75,6 @@ void main(void)
 		fPressure -= m2 * (a + data[index].pressure * invDensity2 * invDensity2) * gradKernel(dist);
 		fViscosity += m2 * (data[index].velocity - v1) * invDensity2 * laplaceKernel(dist);
 	}
-	
-//	int gridX = clamp(gridWidth * (pos.x - bufferBounds[0]) / bufferSize.x), 0, gridWidth - 1);
-//	int gridY = clamp(gridHeight * (pos.y - bufferBounds[2]) / bufferSize.y), 0, gridHeight - 1);
-//	int gridZ = clamp(gridDepth * (pos.z - bufferBounds[4]) / bufferSize.z), 0, gridDepth - 1);
-//
-//	// For all the neighboring grid cells
-//	int bounds[6] = {
-//			clamp(p1->gridX - 1, 0, gridWidth), clamp(p1->gridX + 2, 0, gridWidth),
-//			clamp(p1->gridY - 1, 0, gridHeight), clamp(p1->gridY + 2, 0, gridHeight),
-//			clamp(p1->gridZ - 1, 0, gridDepth), clamp(p1->gridZ + 2, 0, gridDepth) };
-//	for (int z = bounds[4]; z < bounds[5]; z++)
-//	{
-//		for (int y = bounds[2]; y < bounds[3]; y++)
-//		{
-//			for (int x = bounds[0]; x < bounds[1]; x++)
-//			{
-//				int binIndex = calcIndex(x, y, z, gridWidth, gridHeight);
-//				for (UINT j = 0; j < bins[binIndex].size(); j++)
-//				{
-//			}
-//		}
-//	}
 
 	data[id].acceleration = (fPressure * m1 + VISCOSITY * fViscosity /* + fSurface*/) * invDensity1 + g;
 }

@@ -1,5 +1,4 @@
 #include "SPHInteractor.h"
-#include "SPHRasterizer.h"
 
 #if IMPLEMENTATION == MULTI_THREADED
 #include "ThreadedSPHDomain.h"
@@ -13,42 +12,22 @@
 #include "SPHDomain.h"
 #endif
 
-#include <chrono>
-#include <Geometry3D.h>
-#include <GLFW/glfw3.h>
-#include <GlyphPolyDataMapper.h>
+#ifdef OUTPUTFRAMES
 #include <ImageData.h>
 #include <PNGWriter.h>
-#include <RawImageWriter.h>
-#include <Renderer.h>
+#endif
+
+#include <chrono>
+#include <GLFW/glfw3.h>
+#include <GlyphPolyDataMapper.h>
 #include <SphereSource.h>
 #include <TrackballCamera.h>
-#include <tuple>
 
 SPHInteractor::SPHInteractor()
 {
 	// Set the particle positions
 	std::vector<glm::vec3> particlePos;
 	GLfloat iterLength = h / 1.5f; // Squish the particles together a bit for initialization
-
-	// Sphere initialization
-	/*glm::vec3 center = glm::vec3(0.0f, 0.5f, 0.0f);
-	geom3d::Rect bounds = geom3d::Rect(glm::vec3(0.0f, 0.5f, 0.0f), glm::vec3(1.5f, 1.0f, 1.5f));
-	glm::vec3 start = bounds.origin();
-	glm::vec3 end = start + bounds.size();
-	for (GLfloat x = start.x; x < end.x; x += iterLength)
-	{
-		for (GLfloat y = start.y; y < end.y; y += iterLength)
-		{
-			for (GLfloat z = start.z; z < end.z; z += iterLength)
-			{
-				glm::vec3 pos = glm::vec3(x + iterLength * 0.5f, y + iterLength * 0.5f, z + iterLength * 0.5f);
-				glm::vec3 dist = center - pos;
-				if (glm::dot(dist, dist) < 0.5f * 0.5f)
-					particlePos.push_back(pos);
-			}
-		}
-	}*/
 
 	// Rect
 	geom3d::Rect bounds = geom3d::Rect(glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(1.0f, 2.0f, 1.0f));

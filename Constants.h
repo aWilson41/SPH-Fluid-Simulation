@@ -8,7 +8,7 @@
 
 //#define OUTPUTFRAMES // Writes frames as pngs
 #define TIMER // Timer for every frame of the simulation
-//#define STARTIMMEDIATELY // Starts the simulation immediately, no waiting on enter button
+#define STARTIMMEDIATELY // Starts the simulation immediately, no waiting on enter button
 
 // Maximum amount of frames allowed to output, only used if output frames is on
 static const GLuint NUMFRAMES = 500;
