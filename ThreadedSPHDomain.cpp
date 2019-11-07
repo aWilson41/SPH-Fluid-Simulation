@@ -115,7 +115,13 @@ void ThreadedSPHDomain::calcDensity(int threadID, int numThreads)
 
 		p1->density = densitySum;
 		// Pressure = 0 when density = rest density
+#ifdef IDEALGAS
+		p1->pressure = STIFFNESS * (p1->density - REST_DENSITY);
+#else
 		p1->pressure = KAPPA * REST_DENSITY / GAMMA * (std::pow(p1->density / REST_DENSITY, GAMMA) - 1.0f); // Taits formulation
+#endif
+		if (p1->pressure < 0.0f)
+			p1->pressure = 0.0f;
 	}
 }
 

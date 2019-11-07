@@ -22,11 +22,19 @@
 #include <GlyphPolyDataMapper.h>
 #include <SphereSource.h>
 #include <TrackballCamera.h>
+#include <PolyDataPointCloud.h>
+#include <PolyData.h>
+#include <RectangularPrismSource.h>
 
 SPHInteractor::SPHInteractor()
 {
+	/*SphereSource initSpawnArea;
+	initSpawnArea.setRadius(0.4f);
+	initSpawnArea.setOrigin(0.0f, 0.5f, 0.0f);
+	initSpawnArea.update();*/
+
 	// Set the particle positions
-	std::vector<glm::vec3> particlePos;
+	std::vector<glm::vec3> particlesPos;
 	GLfloat iterLength = h / 1.5f; // Squish the particles together a bit for initialization
 
 	// Rect
@@ -42,12 +50,26 @@ SPHInteractor::SPHInteractor()
 				if (x < 0.5f && x > -0.5f &&
 					y < 1.5f && y > 0.0f &&
 					z < 0.5f && z > -0.5f)
-					particlePos.push_back(glm::vec3(x, y, z));
+					particlesPos.push_back(glm::vec3(x, y, z));
 			}
 		}
 	}
+	/*RectangularPrismSource initSpawnRegion;
+	initSpawnRegion.setOriginExtent(glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f));
+	initSpawnRegion.update();
 
-	printf("Num Particles: %d\n", static_cast<UINT>(particlePos.size()));
+	PolyDataPointCloud ptGenerator;
+	ptGenerator.setNumberOfIterations(10);
+	ptGenerator.setOptimizeByRadius(true);
+	ptGenerator.setRadius(h * 0.5f);
+	const UINT numPts = 10000;
+	ptGenerator.setNumberOfPoints(numPts);
+	ptGenerator.setInput(initSpawnRegion.getOutput());
+	ptGenerator.update();
+	glm::vec3* particlesPos = reinterpret_cast<glm::vec3*>(ptGenerator.getOutput()->getVertexData());*/
+
+	const UINT numPts = particlesPos.size();
+	printf("Num Particles: %d\n", numPts);
 	// Create a uv sphere source for instancing
 	particleSphereSource = new SphereSource();
 	particleSphereSource->setRadius(h * 0.5f);
@@ -55,15 +77,15 @@ SPHInteractor::SPHInteractor()
 	// Create the particle mapper
 	particleMapper = new GlyphPolyDataMapper();
 	particleMapper->setInput(particleSphereSource->getOutput());
-	particleMapper->allocateOffsets(static_cast<UINT>(particlePos.size()));
-	particleMapper->allocateColorData(static_cast<UINT>(particlePos.size()));
+	particleMapper->allocateOffsets(numPts);
+	particleMapper->allocateColorData(numPts);
 	glm::vec3* offsetData = reinterpret_cast<glm::vec3*>(particleMapper->getOffsetData());
 	glm::vec3* colorData = reinterpret_cast<glm::vec3*>(particleMapper->getColorData());
 	// Set the offset data of particle mapper with the generate positions and create the particles
-	std::vector<SPHParticle> particles(particlePos.size());
-	for (UINT i = 0; i < particlePos.size(); i++)
+	std::vector<SPHParticle> particles(numPts);
+	for (UINT i = 0; i < numPts; i++)
 	{
-		offsetData[i] = particlePos[i];
+		offsetData[i] = particlesPos[i];
 		particles[i] = SPHParticle(&offsetData[i], PARTICLE_MASS);
 	}
 
@@ -90,6 +112,8 @@ SPHInteractor::SPHInteractor()
 	running = true;
 #endif
 
+	//geom3d::Rect bounds(glm::vec3(0.0f, 0.5f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f));
+	//sphDomain->initParticles(particles, bounds.origin() - bounds.size() * 0.5f * glm::vec3(1.0f, 0.0f, 1.0f), bounds.size() * glm::vec3(2.0f, 5.0f, 2.0f));// +glm::vec3(1.5f, 0.0f, 0.0f));
 	sphDomain->initParticles(particles, bounds.origin() - bounds.size() * 0.5f * glm::vec3(1.0f, 0.0f, 1.0f), bounds.size() * glm::vec3(2.0f, 5.0f, 2.0f));// +glm::vec3(1.5f, 0.0f, 0.0f));
 	updateParticleMapper();
 }
@@ -111,11 +135,14 @@ void SPHInteractor::keyDown(int key)
 		running = !running;
 	else if (key == GLFW_KEY_2)
 	{
-		forceScale += 1.0f;
-		printf("hit\n");
+		CLICK_VELOCITY += 1.0f;
+		printf("Velocity Now %f\n", CLICK_VELOCITY);
 	}
 	else if (key == GLFW_KEY_1)
-		forceScale -= 1.0f;
+	{
+		CLICK_VELOCITY -= 1.0f;
+		printf("Velocity Now %f\n", CLICK_VELOCITY);
+	}
 }
 void SPHInteractor::keyUp(int key) { }
 
@@ -147,11 +174,11 @@ void SPHInteractor::update()
 		{
 			if (geom3d::intersectSphereRay(geom3d::Sphere(*sphDomain->particles[i].pos, r), ray))
 			{
-				sphDomain->particles[i].velocity += ray.dir * forceScale;
+				sphDomain->particles[i].velocity += ray.dir * CLICK_VELOCITY;
 				// All the particles nearby this one
 				for (UINT j = 0; j < sphDomain->particles[i].neighbors.size(); j++)
 				{
-					sphDomain->particles[i].neighbors[j]->velocity += ray.dir * forceScale;
+					sphDomain->particles[i].neighbors[j]->velocity += ray.dir * CLICK_VELOCITY;
 				}
 			}
 		}

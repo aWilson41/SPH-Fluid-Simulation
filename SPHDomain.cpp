@@ -6,9 +6,8 @@
 #include "Constants.h"
 
 // Poly6 Kernel
-static GLfloat kernel(glm::vec3 x)
+static GLfloat kernel(GLfloat r2)
 {
-	GLfloat r2 = glm::dot(x, x);
 	if (r2 > h2 || r2 < 0.0f)
 		return 0.0f;
 
@@ -100,12 +99,13 @@ void SPHDomain::calcDensity()
 					{
 						SPHParticle* p2 = bins[binIndex][j];
 						glm::vec3 dist = p1->getPos() - p2->getPos();
+						GLfloat r2 = glm::dot(dist, dist);
 						// IE: If (dist between centers of spheres < r1 + r2). But for our spheres r1=r2 so just use diameter
-						if (glm::dot(dist, dist) <= h2)
+						if (r2 <= h2)
 						{
 							if (p1 != p2)
 								p1->neighbors.push_back(p2);
-							densitySum += p2->mass * kernel(dist);
+							densitySum += p2->mass * kernel(r2);
 						}
 					}
 				}
@@ -113,9 +113,12 @@ void SPHDomain::calcDensity()
 		}
 
 		p1->density = densitySum;// / PARTICLE_VOLUME;
+#ifdef IDEALGAS
 		// Pressure = 0 when density = rest density
-		//p1.pressure = STIFFNESS * (p1.density - REST_DENSITY);
+		p1->pressure = STIFFNESS * (p1->density - REST_DENSITY);
+#else
 		p1->pressure = KAPPA * REST_DENSITY / GAMMA * (std::pow(p1->density / REST_DENSITY, GAMMA) - 1.0f); // Taits formulation
+#endif
 		if (p1->pressure < 0.0f)
 			p1->pressure = 0.0f;
 	}

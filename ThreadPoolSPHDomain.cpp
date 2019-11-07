@@ -1,11 +1,13 @@
 #include "ThreadPoolSPHDomain.h"
 #include "Constants.h"
 #include <StdMultiThreaderPool.h>
+#include <chrono>
+#include <KdTreePointLocator.h>
+#include <KdTree.h>
 
 // Poly6 Kernel
-static GLfloat kernel(glm::vec3 x)
+static GLfloat kernel(GLfloat r2)
 {
-	GLfloat r2 = glm::dot(x, x);
 	if (r2 > h2 || r2 < 0.0f)
 		return 0.0f;
 
@@ -51,11 +53,14 @@ static void threadedIntegrate(ThreadInfo* threadInfo)
 
 ThreadPoolSPHDomain::ThreadPoolSPHDomain()
 {
+	kdtree = new KdTree();
+	kdtree->setLeafSize(20);
 	threader = new StdMultiThreaderPool();
 	threader->start();
 }
 ThreadPoolSPHDomain::~ThreadPoolSPHDomain()
 {
+	delete kdtree;
 	delete threader;
 }
 
@@ -89,6 +94,9 @@ void ThreadPoolSPHDomain::initParticles(std::vector<SPHParticle> particles, glm:
 // Calculate, density, pressures, and save the neighbors
 void ThreadPoolSPHDomain::calcDensity(int threadID, int numThreads)
 {
+	KdTreePointLocator locator;
+	locator.setKdTree(kdtree);
+
 	// Calculate the density and pressure between particles using the local areas
 	for (UINT i = threadID; i < particles.size(); i += numThreads)
 	{
@@ -96,36 +104,27 @@ void ThreadPoolSPHDomain::calcDensity(int threadID, int numThreads)
 		GLfloat densitySum = 0.0f;
 		p1->neighbors.clear();
 
-		int bounds[6] = {
-			MathHelp::clamp(p1->gridX - 1, 0, gridWidth), MathHelp::clamp(p1->gridX + 2, 0, gridWidth),
-			MathHelp::clamp(p1->gridY - 1, 0, gridHeight), MathHelp::clamp(p1->gridY + 2, 0, gridHeight),
-			MathHelp::clamp(p1->gridZ - 1, 0, gridDepth), MathHelp::clamp(p1->gridZ + 2, 0, gridDepth) };
-		for (int z = bounds[4]; z < bounds[5]; z++)
+		std::vector<UINT> neighbors = locator.getPoints(p1->getPos(), r);
+		for (UINT j = 0; j < neighbors.size(); j++)
 		{
-			for (int y = bounds[2]; y < bounds[3]; y++)
-			{
-				for (int x = bounds[0]; x < bounds[1]; x++)
-				{
-					int binIndex = calcIndex(x, y, z, gridWidth, gridHeight);
-					for (UINT j = 0; j < bins[binIndex].size(); j++)
-					{
-						SPHParticle* p2 = bins[binIndex][j];
-						glm::vec3 dist = p1->getPos() - p2->getPos();
-						// IE: If (dist between centers of spheres < r1 + r2). But for our spheres r1=r2 so just use diameter
-						if (glm::dot(dist, dist) <= h2)
-						{
-							if (p1 != p2)
-								p1->neighbors.push_back(p2);
-							densitySum += p2->mass * kernel(dist);
-						}
-					}
-				}
-			}
+			const UINT p2Index = kdtree->getIndices()[neighbors[j]];
+			SPHParticle* p2 = &particles[p2Index];
+			const glm::vec3 dist = p1->getPos() - p2->getPos();
+			const GLfloat r2 = glm::dot(dist, dist);
+			if (p1 != p2)
+				p1->neighbors.push_back(p2);
+			densitySum += p2->mass * kernel(r2);
 		}
 
 		p1->density = densitySum;
+#ifdef IDEALGAS
+		p1->pressure = STIFFNESS * (p1->density - REST_DENSITY);
+#else
 		// Pressure = 0 when density = rest density
 		p1->pressure = KAPPA * REST_DENSITY / GAMMA * (std::pow(p1->density / REST_DENSITY, GAMMA) - 1.0f); // Taits formulation
+#endif
+		if (p1->pressure < 0.0f)
+			p1->pressure = 0.0f;
 	}
 }
 
@@ -163,12 +162,12 @@ void ThreadPoolSPHDomain::integrate(int threadID, int numThreads)
 	{
 		Particle& p = particles[i];
 		p.updateVelocity(dt);
-		collision(p.getPos(), p.velocity);
+		collision(*(p.pos), p.velocity);
 		p.updatePos(dt);
 	}
 }
 
-void ThreadPoolSPHDomain::collision(glm::vec3 pos, glm::vec3& v)
+void ThreadPoolSPHDomain::collision(glm::vec3& pos, glm::vec3& v)
 {
 	// Collision
 	glm::vec3 normal = glm::vec3(0.0f);
@@ -188,11 +187,13 @@ void ThreadPoolSPHDomain::collision(glm::vec3 pos, glm::vec3& v)
 			{
 				collision = true;
 				normal = glm::vec3(1.0f, 0.0f, 0.0f);
+				pos.x = bounds[0];
 			}
 			else if (pos.x >= bounds[1])
 			{
 				collision = true;
 				normal = glm::vec3(-1.0f, 0.0f, 0.0f);
+				pos.x = bounds[1];
 			}
 		}
 		else if (i == 1)
@@ -201,11 +202,13 @@ void ThreadPoolSPHDomain::collision(glm::vec3 pos, glm::vec3& v)
 			{
 				collision = true;
 				normal = glm::vec3(0.0f, 1.0f, 0.0f);
+				pos.y = bounds[2];
 			}
 			else if (pos.y >= bounds[3])
 			{
 				collision = true;
 				normal = glm::vec3(0.0f, -1.0f, 0.0f);
+				pos.y = bounds[3];
 			}
 		}
 		else if (i == 2)
@@ -214,11 +217,13 @@ void ThreadPoolSPHDomain::collision(glm::vec3 pos, glm::vec3& v)
 			{
 				collision = true;
 				normal = glm::vec3(0.0f, 0.0f, 1.0f);
+				pos.z = bounds[4];
 			}
 			else if (pos.z >= bounds[5])
 			{
 				collision = true;
 				normal = glm::vec3(0.0f, 0.0f, -1.0f);
+				pos.z = bounds[5];
 			}
 		}
 
@@ -247,8 +252,10 @@ void ThreadPoolSPHDomain::update(GLfloat dt)
 {
 	ThreadPoolSPHDomain::dt = dt;
 
+	//auto timeStart = std::chrono::steady_clock::now();
+
 	// Bin the particles into local areas
-	bins = std::vector<std::vector<SPHParticle*>>(gridWidth * gridHeight * gridDepth);
+	/*bins = std::vector<std::vector<SPHParticle*>>(gridWidth * gridHeight * gridDepth);
 	for (UINT i = 0; i < particles.size(); i++)
 	{
 		SPHParticle* p = &particles[i];
@@ -257,7 +264,14 @@ void ThreadPoolSPHDomain::update(GLfloat dt)
 		p->gridZ = MathHelp::clamp(static_cast<int>(gridDepth * (p->pos->z - bufferBounds[4]) / bufferSize.z), 0, gridDepth - 1);
 		int binIndex = calcIndex(p->gridX, p->gridY, p->gridZ, gridWidth, gridHeight);
 		bins[binIndex].push_back(p);
-	}
+	}*/
+	
+	kdtree->setAccessor([&](UINT index) { return particles[index].getPos(); }, particles.size());
+	kdtree->setLocalOrder(true);
+	kdtree->update();
+
+	/*auto timeEnd = std::chrono::steady_clock::now();
+	printf("Bin Time: %f\n", std::chrono::duration<double, std::milli>(timeEnd - timeStart).count() / 1000.0);*/
 
 	threader->setMethod(threadedCalcDensity, this);
 	threader->execute();

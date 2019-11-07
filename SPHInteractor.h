@@ -55,6 +55,4 @@ protected:
 	UINT iter = 0;
 	bool running = false;
 	bool writingFrames = true;
-
-	GLfloat forceScale = 1.0f;
 };

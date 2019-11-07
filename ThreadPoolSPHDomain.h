@@ -2,6 +2,7 @@
 #include "Particle.h"
 #include <MathHelper.h>
 
+class KdTree;
 class StdMultiThreaderPool;
 
 class ThreadPoolSPHDomain
@@ -18,13 +19,14 @@ public:
 	void calcForces(int threadID, int numThreads);
 	void integrate(int threadID, int numThreads);
 	void update(GLfloat dt);
-	void collision(glm::vec3 pos, glm::vec3& v);
+	void collision(glm::vec3& pos, glm::vec3& v);
 
 public:
 	StdMultiThreaderPool* threader;
 	std::vector<SPHParticle> particles;
-	std::vector<std::vector<SPHParticle*>> bins;
+	//std::vector<std::vector<SPHParticle*>> bins;
 	GLfloat dt = -1.0f;
+	KdTree* kdtree = nullptr;
 
 	glm::vec3 origin;
 	glm::vec3 size;

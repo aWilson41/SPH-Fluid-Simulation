@@ -187,10 +187,10 @@ void GLSLSPHDomain::invokePressureProgram()
 	glUseProgram(shaderID);
 
 	// Binds uniforms
-	glUniform1f(0, GAMMA);
+	/*glUniform1f(0, GAMMA);
 	glUniform1f(1, KAPPA);
 	glUniform1f(2, REST_DENSITY);
-	glUniform1f(3, h2);
+	glUniform1f(3, h2);*/
 	glUniform1f(4, poly6Coe);
 	glUniform1ui(5, maxNeighbors);
 	int gridDim[3] = { gridWidth, gridHeight, gridDepth };

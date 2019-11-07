@@ -19,20 +19,22 @@
 
 int main(int argc, char *argv[])
 {
-	srand(static_cast<unsigned int>(time(NULL)));
-	// Kdtree test
-	PolyData polyData;
-	polyData.allocateVertexData(10000, CellType::POINT);
-	glm::vec3* pts = reinterpret_cast<glm::vec3*>(polyData.getVertexData());
-	for (size_t i = 0; i < polyData.getPointCount(); i++)
-	{
-		pts[i] = glm::vec3(rand() % 10000, rand() % 10000, rand() % 10000) / 10000.0f;
-	}
+	//srand(static_cast<unsigned int>(time(NULL)));
+	//// Kdtree test
+	//PolyData polyData;
+	//polyData.allocateVertexData(10000, CellType::POINT);
+	//glm::vec3* pts = reinterpret_cast<glm::vec3*>(polyData.getVertexData());
+	//for (size_t i = 0; i < polyData.getPointCount(); i++)
+	//{
+	//	pts[i] = glm::vec3(rand() % 10000, rand() % 10000, rand() % 10000) / 10000.0f;
+	//}
 
-	KdTree tree;
-	tree.setInput(&polyData);
-	tree.update();
-
+	//KdTree tree;
+	//tree.setLeafSize(100);
+	////tree.setAccessor([pts](UINT a) { return pts[a]; }, 10000);
+	//tree.setInput(&polyData);
+	//tree.update();
+	//system("pause");
 
 
 	// Create the window
@@ -76,8 +78,8 @@ int main(int argc, char *argv[])
 	depthPass->setDepthInput(geomPass->getDepthOutput());
 
 	UnsharpMaskingPass* aoPass = new UnsharpMaskingPass();
-	aoPass->setRadiusRatio(0.0025f);
-	aoPass->setSigma(5.0f);
+	aoPass->setRadiusRatio(0.003f);
+	aoPass->setSigma(10.0f);
 	aoPass->setDarknessFactor(30.0f);
 	aoPass->setColorInput(lightPass->getColorOutput());
 	aoPass->setDepthInput(depthPass->getColorOutput());
